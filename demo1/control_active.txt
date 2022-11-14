@@ -9,7 +9,7 @@ calib_path             | <demo/directory/path>    # (01) Path where parameter es
 object_parameters      | k_macropore, k_soil, theta_sat, aquiferBaseflowExp, aquiferBaseflowRate, qSurfScale, summerLAI, frozenPrecipMultip, heightCanopyBottom, heightCanopyTop, routingGammaScale, routingGammaShape, Fcapil  # (02) Parameter names to be optimized or evaluated. The parameter names should be the same as they are in the summa source code.
 ostIn_tpl              | tpl/ostIn.DDS.tpl     # (03) Name of ostIn template file. Input file in '[calib_path]/[ostIn_tpl]'. 
 max_iterations         | 10                    # (04) Maximum Number of iterations for optimization. Optional input, depending on the optimization method. Eg, DDS needs this configuration.
-OstrichWarmStart       | no                    # (05) If set to "yes" OSTRICH will read the contents of any previously created "OstModel" output files and use the entries therein to restart an optimization or calibration exercise.
+WarmStart       | no                           # (05) If set to "yes" OSTRICH will read the contents of any previously created "OstModel" output files and use the entries therein to restart an optimization or calibration exercise.
 
 ## ---- PART 2. Hydrologic model settings  ---- 
 model_path             | default               # (06) Path of destination hydrologic model. If 'default', use '[calib_path]/model'.
