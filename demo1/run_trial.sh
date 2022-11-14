@@ -65,7 +65,6 @@ routeExe="$(read_from_control $control_file "route_exe_path")"
 summa_attributeFile="$(read_from_summa_route_control $summa_filemanager "attributeFile")"
 summa_attributeFile=$summa_settings_path/$summa_attributeFile
 nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 7 )
-nCoresPerJob=1   # split domain into 1 gru per run.
 
 # Extract summa output path and prefix from fileManager.txt (use to remove summa outputs).
 summa_outputPath="$(read_from_summa_route_control $summa_filemanager "outputPath")"
