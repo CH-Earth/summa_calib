@@ -90,7 +90,7 @@ date | awk '{printf("%s: ---- executing new trial ----\n",$0)}' >> $calib_path/t
 # ------------------------------------------------------------------------------
 echo "--- updating params ---"
 date | awk '{printf("%s: update params\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/5a_update_paramTrial.py $control_file
+python $script_path/6a_update_paramTrial.py $control_file
 echo " "
 
 # ------------------------------------------------------------------------------
@@ -103,8 +103,13 @@ date | awk '{printf("%s: run summa\n",$0)}' >> $calib_path/timetrack.log
 if [ ! -d $summa_outputPath ]; then mkdir -p $summa_outputPath; fi
 rm -f $summa_outputPath/${summa_outFilePrefix}*
 
-# (2) Run Summa.
-${summaExe} -r never -m $summa_filemanager
+# (2) Run Summa (use multiples cores on the allocated nodes).
+srun --kill-on-bad-exit=0 --multi-prog ./summa_run_list.txt
+wait
+
+# (3) Merge GRU subsets' daily output runoff into one file for routing. 
+echo concatenate summa output files in $summa_outputPath
+python $script_path/6b_concat_summa_ouputs.py $control_file 
 
 # ------------------------------------------------------------------------------
 # --- 3.  Post-process summa output for route                                ---
@@ -126,6 +131,19 @@ date | awk '{printf("%s: run mizuRoute\n",$0)}' >> $calib_path/timetrack.log
 if [ ! -d $route_outputPath ]; then mkdir -p $route_outputPath; fi
 rm -f $route_outputPath/${route_outFilePrefix}*
 
+###############################################
+# NOTE: mpi_mizuroute needs more understanding. eg, how it handles run1_day.nc when sim period=15 days? 
+# why output is written multiple times. Overwrite at the same time, and thus permission denied issue.
+# # (2) Prepare files for mipi mizuRoute.
+# cp $route_settings_path/param.nml.default $summa_outputPath/param.nml.default
+# echo "${summa_outFilePrefix}_day.nc" > $summa_outputPath/summaOutputFileList.txt
+
+# # (3) Run mizuRoute.
+# module load netcdf netcdf-fortran pnetcdf openmpi
+# srun ${routeExe} $route_control
+# wait
+###############################################
+
 # (2) Run mizuRoute.
 ${routeExe} $route_control
 wait
@@ -138,7 +156,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo "--- calculating statistics ---"
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/5b_calculate_sim_stats.py $control_file 
+python $script_path/6c_calculate_sim_stats.py $control_file 
 
 date | awk '{printf("%s: done with trial\n",$0)}' >> $calib_path/timetrack.log
 
