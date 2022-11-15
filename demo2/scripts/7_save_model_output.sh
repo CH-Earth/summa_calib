@@ -82,9 +82,6 @@ outDir="${calib_path}/output_archive"
 runDir=$outDir/run$iteration_idx
 mkdir -p $runDir
 
-echo "$(date +"%Y-%m-%d %T"): saving model output files for run $iteration_idx."
-date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
-
 # save multipliers.txt.
 cp $calib_path/multipliers.txt $runDir/
 
