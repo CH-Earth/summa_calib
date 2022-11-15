@@ -8,6 +8,7 @@ control_file=control_active.txt
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
+# Function to extract a given setting from the controlFile.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -18,6 +19,7 @@ read_from_control () {
     echo $info
 }
 
+# Function to extract a given setting from the summa or mizuRoute configuration file.
 read_from_summa_route_config () {
     input_file=$1
     setting=$2
