@@ -108,7 +108,8 @@ if __name__ == "__main__":
         shutil.copy2(route_output_file, save_best_dir)
         shutil.copy2(stat_output, save_best_dir)
         shutil.copy2(trialParamFile, save_best_dir)
-        shutil.copy2(os.path.join(calib_path,'multiplier*'), save_best_dir)
+        for file in glob.glob(os.path.join(calib_path,'multiplier*')):
+            shutil.copy2(file, save_best_dir)
     else:
         # check if the previous param gets better
         obj_previous = np.loadtxt(stat_output, usecols=[0]) * (-1)  # eg, obj = negative KGE
@@ -119,4 +120,6 @@ if __name__ == "__main__":
             shutil.copy2(route_output_file, save_best_dir)
             shutil.copy2(stat_output, save_best_dir)
             shutil.copy2(trialParamFile, save_best_dir)
-            shutil.copy2(os.path.join(calib_path,'multiplier*'), save_best_dir)
+            for file in glob.glob(os.path.join(calib_path,'multiplier*')):
+                shutil.copy2(file, save_best_dir)
+

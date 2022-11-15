@@ -10,6 +10,7 @@ control_file="control_active.txt"
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
+# Function to extract a given setting from the control_file.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -20,7 +21,8 @@ read_from_control () {
     echo $info
 }
 
-read_from_summa_route_control () {
+# Function to extract a given setting from the summa or mizuRoute configuration file.
+read_from_summa_route_config () {
     input_file=$1
     setting=$2
     
@@ -55,19 +57,19 @@ route_control="$(read_from_control $control_file "route_control")"
 route_control=$route_settings_path/$route_control
 
 # Extract summa output path and prefix from fileManager.txt.
-summa_outputPath="$(read_from_summa_route_control $summa_filemanager "outputPath")"
-summa_outFilePrefix="$(read_from_summa_route_control $summa_filemanager "outFilePrefix")"
+summa_outputPath="$(read_from_summa_route_config $summa_filemanager "outputPath")"
+summa_outFilePrefix="$(read_from_summa_route_config $summa_filemanager "outFilePrefix")"
 
 # Extract summa parameter file from fileManager.txt.
-trialParamFile="$(read_from_summa_route_control $summa_filemanager "trialParamFile")"
+trialParamFile="$(read_from_summa_route_config $summa_filemanager "trialParamFile")"
 trialParamFile_priori=${trialParamFile%\.nc}.priori.nc
 
 trialParamFile=$summa_settings_path/$trialParamFile
 trialParamFile_priori=$summa_settings_path/$trialParamFile_priori
 
 # Extract mizuRoute output path and prefix from route_control (use for removing outputs).
-route_outputPath="$(read_from_summa_route_control $route_control "<output_dir>")"
-route_outFilePrefix="$(read_from_summa_route_control $route_control "<case_name>")"
+route_outputPath="$(read_from_summa_route_config $route_control "<output_dir>")"
+route_outFilePrefix="$(read_from_summa_route_config $route_control "<case_name>")"
 
 # Get statistical output file from control_file.
 stat_output="$(read_from_control $control_file "stat_output")"

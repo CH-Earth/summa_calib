@@ -64,17 +64,17 @@ summaExe="$(read_from_control $control_file "summa_exe_path")"
 routeExe="$(read_from_control $control_file "route_exe_path")"
 
 # Get the numebr of GRUs for the domain (used for splitting summa run).
-summa_attributeFile="$(read_from_summa_route_control $summa_filemanager "attributeFile")"
+summa_attributeFile="$(read_from_summa_route_config $summa_filemanager "attributeFile")"
 summa_attributeFile=$summa_settings_path/$summa_attributeFile
 nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 7 )
 
 # Extract summa output path and prefix from fileManager.txt (use to remove summa outputs).
-summa_outputPath="$(read_from_summa_route_control $summa_filemanager "outputPath")"
-summa_outFilePrefix="$(read_from_summa_route_control $summa_filemanager "outFilePrefix")"
+summa_outputPath="$(read_from_summa_route_config $summa_filemanager "outputPath")"
+summa_outFilePrefix="$(read_from_summa_route_config $summa_filemanager "outFilePrefix")"
 
 # Extract mizuRoute output path and prefix from route_control (use for removing outputs).
-route_outputPath="$(read_from_summa_route_control $route_control "<output_dir>")"
-route_outFilePrefix="$(read_from_summa_route_control $route_control "<case_name>")"
+route_outputPath="$(read_from_summa_route_config $route_control "<output_dir>")"
+route_outFilePrefix="$(read_from_summa_route_config $route_control "<case_name>")"
 
 # Get statistical output file from control_file.
 stat_output="$(read_from_control $control_file "stat_output")"
