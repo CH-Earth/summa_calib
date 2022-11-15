@@ -138,7 +138,7 @@ if __name__ == '__main__':
 
                     # (4) Update Ostrich restart based on the existence of 'OstModel0.txt'.
                     if (line_strip.startswith('OstrichWarmStart')):
-                        warm_status = read_from_control(control_file, 'OstrichWarmStart')
+                        warm_status = read_from_control(control_file, 'WarmStart')
                         if warm_status.lower() == 'yes':
                             line_strip = 'OstrichWarmStart yes'
                         elif warm_status.lower() == 'no':

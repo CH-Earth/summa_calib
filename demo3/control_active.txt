@@ -5,7 +5,7 @@
 # Note on path specification. If deviating from default paths, a full path must be specified. E.g. '/home/user/non-default/path'
 
 ## ---- PART 1. Paramerter estimation settings ---- 
-calib_path             | <demo/directory/path>    # (01) Path where parameter estimation is stored. e.g., /____/demo1
+calib_path             | <demo/directory/path>    # (01) Path where parameter estimation is stored. e.g., /____/demo3
 object_parameters      | k_macropore, k_soil, theta_sat, aquiferBaseflowExp, aquiferBaseflowRate, qSurfScale, summerLAI, frozenPrecipMultip, heightCanopyBottom, heightCanopyTop, routingGammaScale, routingGammaShape, Fcapil  # (02) Parameter names to be optimized or evaluated. The parameter names should be the same as they are in the summa source code.
 ostIn_tpl              | tpl/ostIn.DDS.tpl     # (03) Name of ostIn template file. Input file in '[calib_path]/[ostIn_tpl]'. 
 max_iterations         | 10                    # (04) Maximum Number of iterations for optimization. Optional input, depending on the optimization method. Eg, DDS needs this configuration.

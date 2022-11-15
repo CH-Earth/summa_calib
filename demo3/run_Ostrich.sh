@@ -9,16 +9,18 @@
 
 #### Note: This bash file must be put in the same directory as Ostrich.exe.
 
-# ------------------------ User defined input ----------------------------
+# -----------------------------------------------------------------------------------------
+# ----------------------------- User specified input --------------------------------------
+# -----------------------------------------------------------------------------------------
 control_active=control_active.txt  # path of the active control file
 nSubset=51                         # number of GRU subsets to split summa run. Suggest being consistent with the above ntasks.
-# ------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------
+# ------------------------------------ Execute  -------------------------------------------
+# -----------------------------------------------------------------------------------------
 
 # ### Prepare ###
 echo "===== Prepare ====="
-## Load openMP mizuroute required modules
-#module load netcdf netcdf-fortran pnetcdf openmpi
-
 # (1) Generate the a priori parameter file for calibration.
 echo "----- Generate a priori parameter file -----"
 python scripts/1_generate_priori_trialParam.py $control_active
