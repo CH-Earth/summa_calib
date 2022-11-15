@@ -113,14 +113,14 @@ for iteration_idx in $(seq 1 $max_iterations); do
     # # ----------------------------------------------------------------------------
     # --- 4.  save model output                                              ---
     # ------------------------------------------------------------------------------
-    echo save run results
+    echo save model output
     date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
     ./scripts/7_save_model_output.sh $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 5.  save the best output                                              ---
     # ------------------------------------------------------------------------------
-    echo save best results
+    echo save best output
     date | awk '{printf("%s: save best output\n\n",$0)}' >> $calib_path/timetrack.log
     python scripts/8_save_best.py $control_file
 
