@@ -80,10 +80,8 @@ python scripts/3_update_model_config_files.py $control_file
 # (4) Create slurm output folder if not exist
 if [ ! -d slurm_outputs ]; then mkdir slurm_outputs; fi
 
-# -----------------------------------------------------------------------------------------
-# ---------------------------------- Submit jobs ------------------------------------------
-# -----------------------------------------------------------------------------------------
 
+# ### Submit jobs ###
 # submit depedent jobs by updating next and current
 #for iteration_idx in $(seq 1 $max_iterations); do
 for iteration_idx in $(seq 1 2); do
