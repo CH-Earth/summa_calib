@@ -4,6 +4,8 @@
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
 control_file=control_active.txt
+summa_job_file=run_summa.sh
+route_job_file=run_route.sh
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
@@ -57,10 +59,6 @@ max_iterations="$(read_from_control $control_file "max_iterations")"
 warm_start="$(read_from_control $control_file "WarmStart")"
 initial_option="$(read_from_control $control_file "initial_option")"
 
-# Get statistical output file from control_file.
-stat_output="$(read_from_control $control_file "stat_output")"
-stat_output=${calib_path}/${stat_output}
-
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Execute  -------------------------------------------
 # -----------------------------------------------------------------------------------------
@@ -79,51 +77,69 @@ python scripts/2_calculate_multp_bounds.py $control_file
 echo "----- Update summa and mizuRoute configuration files -----"
 python scripts/3_update_model_config_files.py $control_file
 
+# (4) Create slurm output folder if not exist
+if [ ! -d slurm_outputs ]; then mkdir slurm_outputs; fi
 
-# ### Run DDS ###
-echo "===== Run DDS  ====="
-for iteration_idx in $(seq 1 $max_iterations); do
-    
-    echo "----- iteration $iteration_idx -----"
-    
-    # # ----------------------------------------------------------------------------
-    # --- 1.  generate a new sample param set                                    ---
-    # ------------------------------------------------------------------------------
-    echo generate param sett
-    date | awk '{printf("%s: generate parameter set\n",$0)}' >> $calib_path/timetrack.log
-    
-    python scripts/4_DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
-    multiplier_bounds.txt multipliers.tpl multipliers.txt ParamValuesRecord.txt
-    
-    # # ----------------------------------------------------------------------------
-    # --- 2.  conduct run_trial.sh                                               ---
-    # ------------------------------------------------------------------------------
-    echo run trial
-    date | awk '{printf("%s: run trial\n",$0)}' >> $calib_path/timetrack.log    
-    ./run_trial.sh
-    
-    # # ----------------------------------------------------------------------------
-    # --- 3.  save param and obj                                                  ---
-    # ------------------------------------------------------------------------------
-    echo save param and obj
-    date | awk '{printf("%s: save param and obj\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/6_save_param_obj.py $iteration_idx $warm_start multipliers.tpl multipliers.txt \
-    $stat_output calib_record.txt
+# -----------------------------------------------------------------------------------------
+# ---------------------------------- Submit jobs ------------------------------------------
+# -----------------------------------------------------------------------------------------
 
-    # # ----------------------------------------------------------------------------
-    # --- 4.  save model output                                              ---
-    # ------------------------------------------------------------------------------
-    echo save model output
-    date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
-    ./scripts/7_save_model_output.sh $control_file $iteration_idx
+# submit depedent jobs by updating next and current
+#for iteration_idx in $(seq 1 $max_iterations); do
+for iteration_idx in $(seq 1 2); do
+    echo iteration $iteration_idx
 
-    # # ----------------------------------------------------------------------------
-    # --- 5.  save the best output                                              ---
     # ------------------------------------------------------------------------------
-    echo save best output
-    date | awk '{printf("%s: save best output\n\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/8_save_best.py $control_file
+    # The first iteration jobs.
+    # ------------------------------------------------------------------------------
+    if [ "$iteration_idx" -eq 1 ]; then
+        # ------------------------------------------------------------------------------
+        # --- 1.  Generate params via DDS                                            ---
+        # ------------------------------------------------------------------------------
+	python scripts/4_DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+    	multiplier_bounds.txt multipliers.tpl multipliers.txt calib_record.txt
+	
+	# ------------------------------------------------------------------------------
+	# --- 2.  Update params for summa                                             ---
+	# ------------------------------------------------------------------------------
+	python scripts/5_update_paramTrial.py $control_file
 
+        # ------------------------------------------------------------------------------
+        # --- 3.  Submit run summa & route                                           ---
+        # ------------------------------------------------------------------------------
+        # (1) Create summa output path if it does not exist; and remove previous outputs.
+        if [ ! -d $summa_outputPath ]; then mkdir -p $summa_outputPath; fi
+        rm -f $summa_outputPath/${summa_outFilePrefix}*
+
+        # (2) Submit the 1st job: run summa (array job)       
+        current=$( sbatch ${summa_job_file} ${control_file} | awk '{ print $4 }' )  # $4 is used to return jobid
+        echo summa $current
+        
+	# (3) Submit depedent job: run route and all others except run summa
+        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} \
+	| awk '{ print $4 }' )
+	current=$next
+	echo route $current
+
+    # ------------------------------------------------------------------------------
+    # The following iteration jobs.
+    # ------------------------------------------------------------------------------
+    else   
+
+        # ------------------------------------------------------------------------------
+        # --- 1.  Submit run summa & route                                           ---
+        # ------------------------------------------------------------------------------
+	# (1) Submit depedent job: run summa (array job)
+	next=$( sbatch --dependency=afterok:${current} ${summa_job_file} ${control_file} | awk '{ print $4 }' )
+        current=$next
+        echo summa $current
+        
+	# (2) Submit depedent job: run route and all others except run summa
+        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} \
+	| awk '{ print $4 }' )
+        current=$next
+        echo route $current
+    fi
 done
 
-exit
+exit 0

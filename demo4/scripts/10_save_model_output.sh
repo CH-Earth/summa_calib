@@ -1,10 +1,13 @@
 #!/bin/bash
-# ave use-specified files associated with each model run.
+# Save use-specified files associated with each model run.
 # Preserved files will be stored in directories named "runNNN", where NNN is the iteration_idx.
 # This script needs two argument inputs: 
 # (1) control_file: "control_active.txt"
 # (2) iteration_idx: starting from one.
 
+# -----------------------------------------------------------------------------------------
+# ----------------------------- User specified input --------------------------------------
+# -----------------------------------------------------------------------------------------
 control_file=$1
 iteration_idx=$2
 
@@ -23,7 +26,7 @@ read_from_control () {
 }
 
 # Function to extract a given setting from the summa or mizuRoute configuration file.
-read_from_summa_route_config () {
+read_from_summa_route_control () {
     input_file=$1
     setting=$2
     
@@ -58,26 +61,26 @@ route_control="$(read_from_control $control_file "route_control")"
 route_control=$route_settings_path/$route_control
 
 # Extract summa output path and prefix from fileManager.txt.
-summa_outputPath="$(read_from_summa_route_config $summa_filemanager "outputPath")"
-summa_outFilePrefix="$(read_from_summa_route_config $summa_filemanager "outFilePrefix")"
+summa_outputPath="$(read_from_summa_route_control $summa_filemanager "outputPath")"
+summa_outFilePrefix="$(read_from_summa_route_control $summa_filemanager "outFilePrefix")"
 
 # Extract summa parameter file from fileManager.txt.
-trialParamFile="$(read_from_summa_route_config $summa_filemanager "trialParamFile")"
+trialParamFile="$(read_from_summa_route_control $summa_filemanager "trialParamFile")"
 trialParamFile_priori=${trialParamFile%\.nc}.priori.nc
 
 trialParamFile=$summa_settings_path/$trialParamFile
 trialParamFile_priori=$summa_settings_path/$trialParamFile_priori
 
 # Extract mizuRoute output path and prefix from route_control (use for removing outputs).
-route_outputPath="$(read_from_summa_route_config $route_control "<output_dir>")"
-route_outFilePrefix="$(read_from_summa_route_config $route_control "<case_name>")"
+route_outputPath="$(read_from_summa_route_control $route_control "<output_dir>")"
+route_outFilePrefix="$(read_from_summa_route_control $route_control "<case_name>")"
 
 # Get statistical output file from control_file.
 stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
 # -----------------------------------------------------------------------------------------
-# --------------------------------------- Save --------------------------------------------
+# ------------------------------------- Execute -------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 outDir="${calib_path}/output_archive"
