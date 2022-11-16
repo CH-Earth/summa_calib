@@ -82,9 +82,9 @@ if [ ! -d slurm_outputs ]; then mkdir slurm_outputs; fi
 
 
 # ### Submit jobs ###
-# submit depedent jobs by updating next and current
-#for iteration_idx in $(seq 1 $max_iterations); do
-for iteration_idx in $(seq 1 2); do
+# Submit depedent jobs by updating next and current
+echo "===== Submit depedent jobs ====="
+for iteration_idx in $(seq 1 $max_iterations); do
     echo iteration $iteration_idx
 
     # ------------------------------------------------------------------------------
