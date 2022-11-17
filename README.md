@@ -1,6 +1,8 @@
 ## SUMMA parameter estimation
 
-This repository provides four SUMMA parameter estimation (calibration) demos. The differences between demos are their parameter estimation tools and how they run the hydrologic model. The first two demos are good for all users. The last two demos are for users who are familiar with computer clusters and need to speed up SUMMA runs. 
+This repository provides four SUMMA parameter estimation (calibration) demos. The differences between demos are their parameter estimation tools and how they run the hydrologic model. The first two demos are good for all users. The last two demos are for the users who are familiar with computer clusters and need to speed up SUMMA runs. 
+
+Technical documentation is now being built on [readthedocs](https://h294liu.github.io/summa_calib/).
 
 | Demo   | Parameter estimation | Hydrologic model | 
 |:-------|:---------------------|:-----------------|
