@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# Save use-specified files associated with the best model run.
+# This script needs two argument inputs:
+# (1) control_file: "control_active.txt"
+# (2) iteration_idx: starting from one.
+
 import numpy as np
 import pandas as pd
 import math as m
@@ -37,22 +42,24 @@ def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to save the best model outputs.')
     parser.add_argument('controlFile', help='path of the overall control file.')
+    parser.add_argument('iteration_idx', help='calibration iteration index, starting from one.')
     args = parser.parse_args()
     return(args)
 
 if __name__ == "__main__":
     
-    # Example: python save_best.py ../control_active.txt
+    # Example: python 11_save_best.py ../control_active.txt 1
 
     # ---------------------------- Preparation -------------------------------
     # Process command line  
     # Check args
-    if len(sys.argv) != 2:
-        print("Usage: %s <controlFile>" % sys.argv[0])
+    if len(sys.argv) != 3:
+        print("Usage: %s <controlFile> <iteration_idx>" % sys.argv[0])
         sys.exit(0)
     # Otherwise continue
     args = process_command_line()    
-    control_file = args.controlFile
+    control_file  = args.controlFile        # input. path of the active control file.
+    iteration_idx = int(args.iteration_idx) # input. current iteration id starting from 1.
         
     # Read calibration path from controlFile
     calib_path = read_from_control(control_file, 'calib_path')
@@ -92,6 +99,11 @@ if __name__ == "__main__":
     stat_filename = read_from_control(control_file, 'stat_output')
     stat_output = os.path.join(calib_path, stat_filename)
 
+    # Read DDS max_iterations, warm_start, and initial_option from control_file.
+    max_iterations = read_from_control(control_file, 'max_iterations')
+    warm_start     = read_from_control(control_file, 'WarmStart')
+    initial_option = read_from_control(control_file, 'initial_option')
+
     # =======================================================================
     # check/create output folder
     # =======================================================================
@@ -103,7 +115,17 @@ if __name__ == "__main__":
     # =======================================================================
     # save results if save_best_dir is empty or a new best solution appears.
     # =======================================================================
-    if not os.listdir(save_best_dir):
+    # Remove existing best_output
+    if warm_start=='no' and iteration_idx==1:
+        os.remove(os.path.join(save_best_dir, summa_output_file))
+        os.remove(os.path.join(save_best_dir, route_output_file))
+        os.remove(os.path.join(save_best_dir, stat_output))
+        os.remove(os.path.join(save_best_dir, trialParamFile))
+        for file in glob.glob(os.path.join(calib_path,'multiplier*')):
+            os.remove(os.path.join(save_best_dir, file))
+    
+    # Add the initial best_output
+    if not os.listdir(save_best_dir) or (iteration_idx==1 and warm_start=='no'):
         shutil.copy2(summa_output_file, save_best_dir)
         shutil.copy2(route_output_file, save_best_dir)
         shutil.copy2(stat_output, save_best_dir)

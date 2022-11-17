@@ -1,11 +1,14 @@
 #!/bin/bash
-# save use-specified files associated with each model run.
-# preserved files will be stored in directories named "runNNN", where NNN is a counter.
+# Save use-specified files associated with each model run.
+# Preserved files will be stored in directories named "runNNN", where NNN is a counter.
 # Ostrich will pass the following arguments into this script: rank(1), trial(2), counter(3),
 # and objective function category(4). Here counter(3) is used. 
 # counter means the current count of model runs completed for the given rank and trial.
 
-control_file="control_active.txt"
+# -----------------------------------------------------------------------------------------
+# ----------------------------- User specified input --------------------------------------
+# -----------------------------------------------------------------------------------------
+control_file="control_active.txt"  # path of the active control file
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------

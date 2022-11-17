@@ -1,22 +1,11 @@
 #!/bin/bash
-#SBATCH --account=rpp-kshook
+#SBATCH --account=<account>
 #SBATCH --time=00:30:00
 #SBATCH --array=0-2
 #SBATCH --ntasks=2
 #SBATCH --mem-per-cpu=100MB
 #SBATCH --job-name=demo4Summa
 #SBATCH --output=slurm_outputs/%x-%A_%a.out
-
-mkdir -p /home/h294liu/scratch/temp
-export TMPDIR=/home/h294liu/scratch/temp
-export MPI_SHEPHERD=true
-
-#-----------------------------------------------------------------------------------------
-# RUN WITH:
-# sbatch --array1-[number of jobs] [script name]
-# sbatch --array=0-842 1_summa_array_to_copernicus.sh
-# reference: https://docs.computecanada.ca/wiki/Job_arrays
-# ----------------------------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
@@ -28,7 +17,7 @@ nSubset=2         # number of GRU subsets in summa GRUs split. Should be the sam
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
-# Function to extract a given setting from the controlFile.
+# Function to extract a given setting from the control_file.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -77,7 +66,7 @@ summa_attributeFile=$summa_settings_path/$summa_attributeFile
 nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 7 )
 
 # -----------------------------------------------------------------------------------------
-# ------------------------------------ Run summa ------------------------------------------
+# ------------------------------------- Execute -------------------------------------------
 # -----------------------------------------------------------------------------------------
 # (1) Calculate countGRU. 
 countGRU=$(( ( $nGRU / ($nJob * $nSubset) ) + ( $nGRU % ($nJob * $nSubset)  > 0 ) )) 
@@ -95,7 +84,7 @@ if [ $gruEnd -gt $nGRU ]; then
 fi
 
 # (4) Make summa_run_list for job array
-./scripts/6_make_summa_run_list_jobarray.sh $control_file $gruStart $gruEnd $nSubset $countGRU $offset
+./scripts/make_summa_run_list_jobarray.sh $control_file $gruStart $gruEnd $nSubset $countGRU $offset
 
 # (5) Run job array 
 srun --kill-on-bad-exit=0 --multi-prog summa_run_lists/summa_run_list_${offset}.txt 

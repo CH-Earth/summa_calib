@@ -1,0 +1,19 @@
+site_name: SUMMA Parameter Estimation
+site_description: SUMMA calibration method and demos
+site_author: Hongli Liu et al.
+repo_url: https://github.com/CH-Earth/summa_calib
+site_url: https://summa_calib.com/
+docs_dir: docs
+theme: readthedocs
+nav:
+- Home:
+  - Overview: 'index.md'
+- Methodology: 
+  - SUMMA parameters: 'method/param.md'
+  - Parameter estimation workflow: 'method/workflow.md'
+- Demos:
+  - Demo1: 'demos/demo1.md'
+  - Demo2: 'demos/demo2.md'
+  - Demo3: 'demos/demo3.md'
+  - Demo4: 'demos/demo4.md'
+- Future work: 'future.md'

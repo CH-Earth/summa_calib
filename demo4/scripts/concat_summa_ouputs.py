@@ -3,11 +3,10 @@
 
 # #### Concatenate the outputs of a split domain summa run.
 
-import os, sys
+import os, sys, argparse
 from glob import glob
 import netCDF4 as nc
 import numpy as np
-import argparse
 from datetime import datetime
 import concurrent.futures
 

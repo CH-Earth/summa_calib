@@ -67,15 +67,15 @@ initial_option="$(read_from_control $control_file "initial_option")"
 echo "===== Prepare ====="
 # (1) Generate the a priori parameter file for calibration.
 echo "----- Generate a priori parameter file -----"
-python scripts/1_generate_priori_trialParam.py $control_file
+python scripts/generate_priori_trialParam.py $control_file
 
 # (2) Calculate the parameter multiplier lower and upper bounds.
 echo "----- Calculate multiplier bounds -----"
-python scripts/2_calculate_multp_bounds.py $control_file
+python scripts/calculate_multp_bounds.py $control_file
 
 # (3) Update summa and mizuRoute start/end time based on control_file.
 echo "----- Update summa and mizuRoute configuration files -----"
-python scripts/3_update_model_config_files.py $control_file
+python scripts/update_model_config_files.py $control_file
 
 # (4) Create slurm output folder if not exist
 if [ ! -d slurm_outputs ]; then mkdir slurm_outputs; fi
@@ -94,13 +94,13 @@ for iteration_idx in $(seq 1 $max_iterations); do
         # ------------------------------------------------------------------------------
         # --- 1.  Generate params via DDS                                            ---
         # ------------------------------------------------------------------------------
-	python scripts/4_DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
-    	multiplier_bounds.txt multipliers.tpl multipliers.txt calib_record.txt
-	
-	# ------------------------------------------------------------------------------
-	# --- 2.  Update params for summa                                             ---
-	# ------------------------------------------------------------------------------
-	python scripts/5_update_paramTrial.py $control_file
+        python scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+            multiplier_bounds.txt multipliers.tpl multipliers.txt calib_record.txt
+
+        # ------------------------------------------------------------------------------
+        # --- 2.  Update params for summa                                             ---
+        # ------------------------------------------------------------------------------
+        python scripts/update_paramTrial.py $control_file
 
         # ------------------------------------------------------------------------------
         # --- 3.  Submit run summa & route                                           ---
@@ -109,15 +109,15 @@ for iteration_idx in $(seq 1 $max_iterations); do
         if [ ! -d $summa_outputPath ]; then mkdir -p $summa_outputPath; fi
         rm -f $summa_outputPath/${summa_outFilePrefix}*
 
-        # (2) Submit the 1st job: run summa (array job)       
-        current=$( sbatch ${summa_job_file} ${control_file} | awk '{ print $4 }' )  # $4 is used to return jobid
+        # (2) Submit the 1st job: run summa (array job)
+        # $4 is used to return jobid
+        current=$( sbatch ${summa_job_file} ${control_file} | awk '{ print $4 }' )  
         echo summa $current
         
-	# (3) Submit depedent job: run route and all others except run summa
-        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} \
-	| awk '{ print $4 }' )
-	current=$next
-	echo route $current
+        # (3) Submit depedent job: run route and all others except run summa
+        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
+        current=$next
+        echo route $current
 
     # ------------------------------------------------------------------------------
     # The following iteration jobs.
@@ -127,14 +127,13 @@ for iteration_idx in $(seq 1 $max_iterations); do
         # ------------------------------------------------------------------------------
         # --- 1.  Submit run summa & route                                           ---
         # ------------------------------------------------------------------------------
-	# (1) Submit depedent job: run summa (array job)
-	next=$( sbatch --dependency=afterok:${current} ${summa_job_file} ${control_file} | awk '{ print $4 }' )
+        # (1) Submit depedent job: run summa (array job)
+        next=$( sbatch --dependency=afterok:${current} ${summa_job_file} ${control_file} | awk '{ print $4 }' )
         current=$next
         echo summa $current
-        
-	# (2) Submit depedent job: run route and all others except run summa
-        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} \
-	| awk '{ print $4 }' )
+
+        # (2) Submit depedent job: run route and all others except run summa
+        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
         current=$next
         echo route $current
     fi
