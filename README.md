@@ -50,7 +50,7 @@ The serial and parallel runs described in the above table are for SUMMA only. Se
     - demo4: ./run_DDS.sh           &nbsp;(This submits multiple depedent jobs)
 
 
-Please look at [readthedocs](https://summa_calib.com/) to learn more about SUMMA parameter estimation methodology and demo details.
+Please look at [readthedocs](https://h294liu.github.io/summa_calib/) to learn more about SUMMA parameter estimation methodology and demo details.
 
 ### Acknowledgements
 We thank our colleagues who have contributed to improving this repository (in order of contribution time):
