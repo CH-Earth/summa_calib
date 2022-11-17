@@ -8,10 +8,6 @@
 #SBATCH --job-name=demo4Route
 #SBATCH --output=slurm_outputs/%x-%j.out
 
-mkdir -p /home/h294liu/scratch/temp
-export TMPDIR=/home/h294liu/scratch/temp
-export MPI_SHEPHERD=true
-
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
@@ -88,7 +84,7 @@ stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
 # -----------------------------------------------------------------------------------------
-# ---------------------------------- Execute trial ----------------------------------------
+# ------------------------------------- Execute -------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
@@ -99,7 +95,7 @@ date | awk '{printf("%s: post-process summa output\n",$0)}' >> $calib_path/timet
 
 # Be careful. Hard coded file name "xxx_day.nc". Valid for daily simulation.
 # (1) Merge summa daily outputs into one file. 
-python scripts/7_concat_summa_ouputs.py $control_file 
+python scripts/concat_summa_ouputs.py $control_file 
 
 # (2) Shift summa output time back 1 day for routing - only if computing daily outputs!
 # Summa use end of time step for time values, but mizuRoute use beginning of time step.
@@ -139,12 +135,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo calculate statistics
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-
-# # (1) Remove the stats output file to make sure it is created properly with every run.
-# rm -f $stat_output
-
-# (2) Calculate statistics.
-python scripts/8_calculate_sim_stats.py $control_file
+python scripts/calculate_sim_stats.py $control_file
 wait
 
 # # ----------------------------------------------------------------------------
@@ -152,21 +143,21 @@ wait
 # ------------------------------------------------------------------------------
 echo save param and obj
 date | awk '{printf("%s: save param and obj\n",$0)}' >> $calib_path/timetrack.log
-python scripts/9_save_param_obj.py $control_file $iteration_idx 
+python scripts/save_param_obj.py $control_file $iteration_idx 
 
 # # ----------------------------------------------------------------------------
 # --- 5.  Save model output                                                  ---
 # ------------------------------------------------------------------------------
 echo save model output
 date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
-./scripts/10_save_model_output.sh $control_file $iteration_idx
+./scripts/save_model_output.sh $control_file $iteration_idx
 
 # # ----------------------------------------------------------------------------
 # --- 6.  Save the best output                                               ---
 # ------------------------------------------------------------------------------
 echo save best output
 date | awk '{printf("%s: save best output\n",$0)}' >> $calib_path/timetrack.log
-python scripts/11_save_best.py $control_file $iteration_idx
+python scripts/save_best.py $control_file $iteration_idx
 
 # ------------------------------------------------------------------------------
 # --- 7.  Generate a new param based on DDS                                  ---
@@ -174,14 +165,14 @@ python scripts/11_save_best.py $control_file $iteration_idx
 echo generate a new parameter sample
 date | awk '{printf("%s: generate a new parameter sample\n",$0)}' >> $calib_path/timetrack.log
 
-python scripts/4_DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+python scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
 multiplier_bounds.txt multipliers.tpl multipliers.txt calib_record.txt
 
 # ------------------------------------------------------------------------------
 # --- 8.  Update params for summa                                            ---
 # ------------------------------------------------------------------------------
 echo update params for summa
-python scripts/5_update_paramTrial.py $control_file
+python scripts/update_paramTrial.py $control_file
 
 # ------------------------------------------------------------------------------
 # --- 9.  Delete existing summa outputs for the next run                     ---

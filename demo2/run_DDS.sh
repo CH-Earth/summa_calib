@@ -69,15 +69,15 @@ stat_output=${calib_path}/${stat_output}
 echo "===== Prepare ====="
 # (1) Generate the a priori parameter file for calibration.
 echo "----- Generate a priori parameter file -----"
-python scripts/1_generate_priori_trialParam.py $control_file
+python scripts/generate_priori_trialParam.py $control_file
 
 # (2) Calculate the parameter multiplier lower and upper bounds.
 echo "----- Calculate multiplier bounds -----"
-python scripts/2_calculate_multp_bounds.py $control_file
+python scripts/calculate_multp_bounds.py $control_file
 
 # (3) Update summa and mizuRoute start/end time based on control_file.
 echo "----- Update summa and mizuRoute configuration files -----"
-python scripts/3_update_model_config_files.py $control_file
+python scripts/update_model_config_files.py $control_file
 
 
 # ### Run DDS ###
@@ -92,7 +92,7 @@ for iteration_idx in $(seq 1 $max_iterations); do
     echo generate param sett
     date | awk '{printf("%s: generate parameter set\n",$0)}' >> $calib_path/timetrack.log
     
-    python scripts/4_DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+    python scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
     multiplier_bounds.txt multipliers.tpl multipliers.txt ParamValuesRecord.txt
     
     # # ----------------------------------------------------------------------------
@@ -107,21 +107,21 @@ for iteration_idx in $(seq 1 $max_iterations); do
     # ------------------------------------------------------------------------------
     echo save param and obj
     date | awk '{printf("%s: save param and obj\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/6_save_param_obj.py $control_file $iteration_idx
+    python scripts/save_param_obj.py $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 4.  save model output                                              ---
     # ------------------------------------------------------------------------------
     echo save model output
     date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
-    ./scripts/7_save_model_output.sh $control_file $iteration_idx
+    ./scripts/save_model_output.sh $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 5.  save the best output                                              ---
     # ------------------------------------------------------------------------------
     echo save best output
     date | awk '{printf("%s: save best output\n\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/8_save_best.py $control_file $iteration_idx
+    python scripts/save_best.py $control_file $iteration_idx
 
 done
 

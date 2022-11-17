@@ -7,7 +7,6 @@
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
 control_file="control_active.txt"  # path of the active control file
-script_path="./scripts"              # path of scripts (relative or absolute path)
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
@@ -92,7 +91,7 @@ date | awk '{printf("%s: ---- executing new trial ----\n",$0)}' >> $calib_path/t
 # ------------------------------------------------------------------------------
 echo "--- updating params ---"
 date | awk '{printf("%s: update params\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/5a_update_paramTrial.py $control_file
+python scripts/update_paramTrial.py $control_file
 echo " "
 
 # ------------------------------------------------------------------------------
@@ -140,7 +139,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo "--- calculating statistics ---"
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/5b_calculate_sim_stats.py $control_file 
+python scripts/calculate_sim_stats.py $control_file 
 
 date | awk '{printf("%s: done with trial\n",$0)}' >> $calib_path/timetrack.log
 

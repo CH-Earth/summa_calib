@@ -7,7 +7,6 @@
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
 control_file="control_active.txt"  # path of the active control file
-script_path="./scripts"              # path of scripts (relative or absolute path)
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
@@ -92,7 +91,7 @@ date | awk '{printf("%s: ---- executing new trial ----\n",$0)}' >> $calib_path/t
 # ------------------------------------------------------------------------------
 echo "--- updating params ---"
 date | awk '{printf("%s: update params\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/6a_update_paramTrial.py $control_file
+python scripts/update_paramTrial.py $control_file
 echo " "
 
 # ------------------------------------------------------------------------------
@@ -111,7 +110,7 @@ wait
 
 # (3) Merge GRU subsets' daily output runoff into one file for routing. 
 echo concatenate summa output files in $summa_outputPath
-python $script_path/6b_concat_summa_ouputs.py $control_file 
+python scripts/concat_summa_ouputs.py $control_file 
 
 # ------------------------------------------------------------------------------
 # --- 3.  Post-process summa output for route                                ---
@@ -158,7 +157,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo "--- calculating statistics ---"
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-python $script_path/6c_calculate_sim_stats.py $control_file 
+python scripts/calculate_sim_stats.py $control_file 
 
 date | awk '{printf("%s: done with trial\n",$0)}' >> $calib_path/timetrack.log
 
