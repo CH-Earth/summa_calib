@@ -107,8 +107,7 @@ for iteration_idx in $(seq 1 $max_iterations); do
     # ------------------------------------------------------------------------------
     echo save param and obj
     date | awk '{printf("%s: save param and obj\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/6_save_param_obj.py $iteration_idx $warm_start multipliers.tpl multipliers.txt \
-    $stat_output calib_record.txt
+    python scripts/6_save_param_obj.py $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 4.  save model output                                              ---
@@ -122,7 +121,7 @@ for iteration_idx in $(seq 1 $max_iterations); do
     # ------------------------------------------------------------------------------
     echo save best output
     date | awk '{printf("%s: save best output\n\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/8_save_best.py $control_file
+    python scripts/8_save_best.py $control_file $iteration_idx
 
 done
 

@@ -8,11 +8,9 @@
 # Note: summa parameter names are different from multiplier names.
 
 # import module
-import os
+import os, shutil, sys, argparse
 import numpy as np
-import shutil, sys
 import netCDF4 as nc
-import argparse
 
 def process_command_line():
     '''Parse the commandline'''

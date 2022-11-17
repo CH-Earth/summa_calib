@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=rpp-kshook
+#SBATCH --account=<account>
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

@@ -4,12 +4,10 @@
 # #### Calculate model performance evaluation/statistical metrics.
 
 # import module
-import os, sys
+import os, sys, datetime, argparse, glob
 import numpy as np
-import datetime
 import pandas as pd
 import xarray as xr
-import argparse, glob
 
 def process_command_line():
     '''Parse the commandline'''

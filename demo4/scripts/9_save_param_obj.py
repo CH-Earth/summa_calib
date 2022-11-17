@@ -8,10 +8,9 @@
 # (2) iteration_idx: starting from one.
 
 # import module
+import os, sys, argparse 
 import numpy as np
 import pandas as pd
-import math as m
-import os, sys, argparse 
 
 def read_from_control(control_file, setting):
     ''' Function to extract a given setting from the controlFile'''

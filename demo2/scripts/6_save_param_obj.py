@@ -1,49 +1,70 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# Save the seaching history of parameters and their corresponding objective function values \
+# to calib_record.txt ####
+# This script needs two argument inputs:
+# (1) control_file: "control_active.txt"
+# (2) iteration_idx: starting from one.
+
+# import module
+import os, sys, argparse 
 import numpy as np
 import pandas as pd
-import math as m
-import os, sys, argparse 
 
-# ======================================================================
-# Functions to perturb neighborhoud of decision variables to generate 
-# new candidate solutions. Perturbation magnitudes are randomly sampled 
-# from the standard normal distribution (mean = zero) 
-# code source: https://github.com/t2abdulg/DDS_Py.git
-# ======================================================================
+def read_from_control(control_file, setting):
+    ''' Function to extract a given setting from the controlFile'''
+    # Open 'control_active.txt' and locate the line with setting
+    with open(control_file) as ff:
+        for line in ff:
+            line = line.strip()
+            if line.startswith(setting):
+                break
+    # Extract the setting's value
+    substring = line.split('|',1)[1].split('#',1)[0].strip()
+    # Return this value
+    return substring
 
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to generate a param set based on DDS.')
+    parser.add_argument('controlFile', help='path of the overall control file.')
     parser.add_argument('iteration_idx', help='input. current iteration id starting from 1.')
-    parser.add_argument('warm_start', help='whether use the the best param set of the existing record file. yes or no.')
-    parser.add_argument('param_tpl_file', help='param template file where param value is replaced by param name.')
-    parser.add_argument('param_file', help='input & output. one set of param sample.')
-    parser.add_argument('obj_file', help='input. file storing obj function.')
-    parser.add_argument('record_file', help='input & output. calib record file, in the same format as OstModel.txt.')
     args = parser.parse_args()
     return(args)
 
 
 if __name__ == "__main__":
     
-    # Example: python 5_save_best_results.py 1 trial_stats.txt multipliers.txt calib_record.txt
+    # Example: python 9_save_param_obj.py ../control_active.txt 1 
 
     # process command line 
     # check args
-    if len(sys.argv) != 7:
-        print("Usage: %s <iteration_idx> <warm_start> <param_tpl_file> <param_file> <obj_file> <record_file>" % sys.argv[0])
+    if len(sys.argv) != 3:
+        print("Usage: %s <controlFile> <iteration_idx>" % sys.argv[0])
         sys.exit(0)
     
     # otherwise continue
     args = process_command_line()    
+    control_file  = args.controlFile       # input. path of the active control file.    
     iteration_idx = int(args.iteration_idx)# input. current iteration id starting from 1.
-    warm_start = args.warm_start           # input. whether use the the best param set of the existing record file. yes or no.
-    param_tpl_file = args.param_tpl_file   # input. param template file storing param names.
-    param_file = args.param_file           # input. param file storing a set of param sample.
-    obj_file = args.obj_file               # input. file storing obj function. 
-    record_file = args.record_file         # input & output. param record file.
+    
+    # Read calibration path from controlFile
+    calib_path = read_from_control(control_file, 'calib_path')
+
+    # Read DDS max_iterations, warm_start, and initial_option from control_file.
+    max_iterations = read_from_control(control_file, 'max_iterations')
+    warm_start     = read_from_control(control_file, 'WarmStart')
+    initial_option = read_from_control(control_file, 'initial_option')
+
+    # Get statistical output file from control_file.
+    stat_output = read_from_control(control_file, 'stat_output')
+    stat_output = os.path.join(calib_path, stat_output)
+
+    # Specify other files
+    param_tpl_file = 'multipliers.tpl'      # param template file storing param names.
+    param_file     = 'multipliers.txt'      # param file storing a set of param sample.
+    record_file    = 'calib_record.txt'     # param and obj record file.
 
     # =======================================================================
     # Read param sample, name, and obj function. 
@@ -56,13 +77,13 @@ if __name__ == "__main__":
     if not os.path.exists(param_tpl_file):
         print('ERROR: = Param template file %s does not exist.'%(param_tpl_file))            
         quit()
-    param_names = list(np.loadtxt(param_tpl_file, dtype='str'))
-    param_dim = len(param_names)   # number of parameters
+    param_names = list(np.loadtxt(param_tpl_file, dtype='str')) # a list of parameter names
+    param_dim   = len(param_names)                              # number of parameters
     
-    if not os.path.exists(obj_file):
-        print('ERROR: = Obj function file %s does not exist.'%(obj_file))            
+    if not os.path.exists(stat_output):
+        print('ERROR: = Obj function file %s does not exist.'%(stat_output))            
         quit()
-    obj = np.loadtxt(obj_file, usecols=[0]) * (-1) # eg, obj = negative KGE 
+    obj = np.loadtxt(stat_output, usecols=[0]) * (-1)  # objective function, eg, obj = negative KGE 
 
     # =======================================================================
     # Save to record_file
