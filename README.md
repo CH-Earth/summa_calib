@@ -55,9 +55,8 @@ Please look at [readthedocs](https://summa_calib.com/) to learn more about SUMMA
 ### Acknowledgements
 We thank our colleagues who have contributed to improving this repository (in order of contribution time):
 
-- Andy Wood
 - Hongli Liu
-- Naoki Mizukami
+- Andy Wood
 - Shawn Matott
 - Martyn Clark
 - Jim Freer
