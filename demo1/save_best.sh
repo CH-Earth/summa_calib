@@ -1,5 +1,5 @@
 #!/bin/bash
-# Save use-specifed files every time a bew best paraemter set is discovered.
+# Save use-specifed files every time a best paraemter set is discovered.
 
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
