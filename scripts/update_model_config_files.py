@@ -4,12 +4,13 @@
 # #### Update simulation start and end times in fileManager.txt and mizuroute.control ####
 # #### Update intput file name <fname_qsim> in mizuroute.control (eg, "run1_day.nc") ####
 
-# import module
+# import packages
 import os, sys, argparse, shutil
 from datetime import datetime
 import netCDF4 as nc
 import numpy as np
 
+# define functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to update summa and mizuRoute manager/control files.')
@@ -46,9 +47,9 @@ def read_from_summa_route_config(config_file, setting):
 # main
 if __name__ == '__main__':
     
-    # an example: python 3_update_model_config_files.py ../control_active.txt
+    # an example: python update_model_config_files.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
@@ -72,8 +73,8 @@ if __name__ == '__main__':
 
     # Read simulation start and end time from control_file.
     simStartTime = read_from_control(control_file, 'simStartTime')
-    simEndTime   = read_from_control(control_file, 'simEndTime') # Note: H:M can be 23:59, but not 24:00. 
-#     print(simStartTime,simEndTime)
+    simEndTime   = read_from_control(control_file, 'simEndTime') # Note: H:M can be 23:59, but not 24:00. \
+                                                                 # 24:00 needs to be replaced by 00:00
     
     # Extract year-month-day, exclude hour-min-sec.
     simStartDate = datetime.strftime(datetime.strptime(simStartTime, '%Y-%m-%d %H:%M'), '%Y-%m-%d')
@@ -102,11 +103,11 @@ if __name__ == '__main__':
 
 
     # #### 2. Update mizuRoute route_control by changing simStartTime and simEndTime. 
-    # identify route_control and a temporary file. 
+    # Identify route_control and a temporary file. 
     route_control = os.path.join(route_settings_path, read_from_control(control_file, 'route_control'))
     route_control_temp = route_control.split('.txt')[0]+'_temp.txt'
 
-    # change sim times in route_control           
+    # Change sim times in route_control           
     with open(route_control, 'r') as src:
         with open(route_control_temp, 'w') as dst:
             for line in src:

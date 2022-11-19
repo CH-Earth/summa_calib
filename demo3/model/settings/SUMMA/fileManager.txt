@@ -3,10 +3,10 @@ simStartTime         '2008-07-15 00:00' !
 simEndTime           '2008-07-31 23:00' ! 
 tmZoneInfo           'utcTime' ! 
 outFilePrefix        'run1' ! 
-settingsPath         '<model/directory/path>/settings/SUMMA/' ! 
-forcingPath          '<model/directory/path>/forcing/4_SUMMA_input/' ! 
-outputPath           '<model/directory/path>/simulations/run1/SUMMA/' ! 
-statePath            '<model/directory/path>/settings/SUMMA/states/'
+settingsPath         '<model_directory_path>/settings/SUMMA/' ! 
+forcingPath          '<model_directory_path>/forcing/4_SUMMA_input/' ! 
+outputPath           '<model_directory_path>/simulations/run1/SUMMA/' ! 
+statePath            '<model_directory_path>/settings/SUMMA/states/'
 initConditionFile    'coldState.nc' ! Relative to settingsPath 
 attributeFile        'attributes.nc' ! Relative to settingsPath 
 trialParamFile       'trialParams.nc' ! Relative to settingsPath 

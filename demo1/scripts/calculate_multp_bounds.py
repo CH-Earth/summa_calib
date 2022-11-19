@@ -9,20 +9,21 @@
 # 3. Calculate the multiplier lower/upper bounds.
 # 4. Save multiplier bounds into a text.
 
-# import module
-import os, sys, argparse, shutil
+# import packages
+import os, sys, argparse
 import numpy as np
 import xarray as xr
 
+# define functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to caluclate the multiplier bounds.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
-def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''      
+def read_from_control(config_file, setting):
+    ''' Function to extract a given setting from the config_file.'''      
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -34,10 +35,10 @@ def read_from_control(control_file, setting):
     # Return this value    
     return substring
 
-def read_from_summa_route_config(control_file, setting):
+def read_from_summa_route_config(config_file, setting):
     '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
     # Open fileManager.txt or route_control and locate the line with setting
-    with open(control_file) as ff:
+    with open(config_file) as ff:
         for line in ff:
             line = line.strip()
             if line.startswith(setting):
@@ -76,22 +77,22 @@ def str_to_float(data_str):
 # main
 if __name__ == '__main__':
     
-    # an example: python 2_prepare_multp_bounds.py ../control_active.txt
+    # an example: python prepare_multp_bounds.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
-        print("Usage: %s <controlFile>" % sys.argv[0])
+        print("Usage: %s <control_file>" % sys.argv[0])
         sys.exit(0)
     # Otherwise continue
     args = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
 
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')

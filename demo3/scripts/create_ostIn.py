@@ -14,12 +14,12 @@ import numpy as np
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to create Ostrich ostIn.txt.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
 def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''      
+    ''' Function to extract a given setting from the control_file.'''      
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -35,22 +35,22 @@ def read_from_control(control_file, setting):
 # main
 if __name__ == '__main__':
     
-    # an example: python 4_create_ostIn.py ../control_active.txt
+    # an example: python create_ostIn.py ../control_active.txt
 
     # ---------------------------- Preparation -------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
-        print("Usage: %s <controlFile>" % sys.argv[0])
+        print("Usage: %s <control_file>" % sys.argv[0])
         sys.exit(0)
     # Otherwise continue
     args = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
 
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')

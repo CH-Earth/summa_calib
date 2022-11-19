@@ -36,10 +36,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # ------------------------- Settings based on control_file --------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -75,7 +75,7 @@ stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
 # -----------------------------------------------------------------------------------------
-# --------------------------------------- Save --------------------------------------------
+# -------------------------------------- Execute ------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 outDir="${calib_path}/output_archive"

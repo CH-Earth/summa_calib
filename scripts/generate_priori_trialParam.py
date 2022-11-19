@@ -5,7 +5,7 @@
 # Given a list of SUMMA parameter names, create their corresponding a priori parameter values. 
 # 1. Update outputControl.txt by adding parameter names.
 # 2. Update fileManager.txt by changing simStartTime and simEndTime. 
-#    Here use a one-day simulation to get the a priori parameter values.
+#    Here use a 1-day simulation to get the a priori parameter values.
 # 3. Run SUMMA to get a priori parameter values in timestep summa output. 
 # 4. Extract a priori parameter values from summa output and generate trialParam.priori.nc.
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     
     # An example: python 1_generate_priori_trialParam.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
@@ -73,13 +73,43 @@ if __name__ == '__main__':
     summa_settings_relpath = read_from_control(control_file, 'summa_settings_relpath')
     summa_settings_path = os.path.join(model_path, summa_settings_relpath)
 
+    # Identify fileManager.txt and define a temporary file. 
+    summa_filemanager = read_from_control(control_file, 'summa_filemanager')
+    summa_filemanager_temp = summa_filemanager.split('.txt')[0]+'_temp.txt'
+
+    summa_filemanager = os.path.join(summa_settings_path, summa_filemanager)
+    summa_filemanager_temp = os.path.join(summa_settings_path, summa_filemanager_temp)
+
+    # Identify outputControl.txt and define a temporary file.
+    outputControlFile = read_from_summa_route_config(summa_filemanager, 'outputControlFile')
+    outputControlFile_temp = outputControlFile.split('.txt')[0]+'_temp.txt'
+    
+    outputControlFile = os.path.join(summa_settings_path, outputControlFile)
+    outputControlFile_temp = os.path.join(summa_settings_path, outputControlFile_temp)
+
+    # Identify summa output, attribtue, and trialParam files
+    outputPath = read_from_summa_route_config(summa_filemanager, 'outputPath')
+    outFilePrefix = read_from_summa_route_config(summa_filemanager, 'outFilePrefix')
+    outputFile = os.path.join(outputPath, outFilePrefix+'_timestep.nc')
+
+    trialParamFile = read_from_summa_route_config(summa_filemanager, 'trialParamFile')
+    trialParamFile_priori = trialParamFile.split('.nc')[0] + '.priori.nc' # a priori param file
+
+    trialParamFile = os.path.join(summa_settings_path, trialParamFile)
+    trialParamFile_priori = os.path.join(summa_settings_path, trialParamFile_priori)
+
+    attributeFile = read_from_summa_route_config(summa_filemanager,'attributeFile')
+    attributeFile = os.path.join(summa_settings_path, attributeFile)
+    
     # -----------------------------------------------------------------------
 
     # #### 1. Update summa outputControl.txt by adding parameter names.
     # Determine summa output parameters. 
     # Note object_params and output_params are not necessarily the same.
     object_params = read_from_control(control_file, 'object_parameters')  # users provided param names
-    output_params = [x.strip() for x in object_params.split(',')]         # a more complete list of params that should be included in the a priori parameter file 
+    output_params = [x.strip() for x in object_params.split(',')]         # a more complete list of params \
+    # that should be included in the a priori parameter file due to the constrains \
+    # between parameters (eg, soil and canopy height related parameters as shown below)
 
     # Add more parameters if any soil water content parameters are included in object_params.
     soil_params = ['theta_res', 'critSoilWilting', 'critSoilTranspire', 'fieldCapacity', 'theta_sat']
@@ -95,14 +125,6 @@ if __name__ == '__main__':
             if not height_param in object_params:
                 output_params.append(height_param)   
                 
-    # Identify outputControl.txt and a temporary file.
-    summa_filemanager = os.path.join(summa_settings_path, read_from_control(control_file, 'summa_filemanager'))
-    outputControlFile = read_from_summa_route_config(summa_filemanager, 'outputControlFile')
-
-    outputControlFile_temp = outputControlFile.split('.txt')[0]+'_temp.txt'
-    outputControlFile = os.path.join(summa_settings_path, outputControlFile)
-    outputControlFile_temp = os.path.join(summa_settings_path, outputControlFile_temp)
-
     # Add output_params to outputControl.txt            
     with open(outputControlFile, 'r') as src:
         content = src.read()
@@ -121,13 +143,6 @@ if __name__ == '__main__':
     simStartTime_priori = simStartTime  # in format 'yyyy-mm-dd hh:mm'
     simEndTime_priori = datetime.datetime.strftime(datetime.datetime.strptime(simStartTime, '%Y-%m-%d %H:%M') \
                                                    + datetime.timedelta(days=1), '%Y-%m-%d %H:%M') 
-
-    # Identify fileManager.txt and define a temporary file. 
-    summa_filemanager = read_from_control(control_file, 'summa_filemanager')
-    summa_filemanager_temp = summa_filemanager.split('.txt')[0]+'_temp.txt'
-
-    summa_filemanager = os.path.join(summa_settings_path, summa_filemanager)
-    summa_filemanager_temp = os.path.join(summa_settings_path, summa_filemanager_temp)
 
     # Change sim times in fileManager.txt            
     with open(summa_filemanager, 'r') as src:
@@ -148,8 +163,13 @@ if __name__ == '__main__':
     # Summa executable
     summa_exe_path = read_from_control(control_file, 'summa_exe_path')
 
+    # Remove existing summa parameter files
+    if os.path.exists(trialParamFile):
+        os.remove(trialParamFile)
+    if os.path.exists(trialParamFile_priori):
+        os.remove(trialParamFile_priori)
+
     # Remove summa output path if it exists and create from scratch.
-    outputPath = read_from_summa_route_config(summa_filemanager, 'outputPath')
     if os.path.isdir(outputPath):
             shutil.rmtree(outputPath)
     os.makedirs(outputPath)        
@@ -160,25 +180,6 @@ if __name__ == '__main__':
 
 
     # #### 4. Extract a priori parameter values from summa timestep output and generate trialParam.priori.nc.
-    # Specify summa output, attribtue, and trialParam files
-    outFilePrefix = read_from_summa_route_config(summa_filemanager, 'outFilePrefix')
-    outputFile = os.path.join(outputPath, outFilePrefix+'_timestep.nc')
-
-    trialParamFile = read_from_summa_route_config(summa_filemanager, 'trialParamFile')
-    trialParamFile_priori = trialParamFile.split('.nc')[0] + '.priori.nc' # a priori param file
-
-    trialParamFile = os.path.join(summa_settings_path, trialParamFile)
-    trialParamFile_priori = os.path.join(summa_settings_path, trialParamFile_priori)
-
-    attributeFile = read_from_summa_route_config(summa_filemanager,'attributeFile')
-    attributeFile = os.path.join(summa_settings_path, attributeFile)
-    
-    # Remove existing parameter files
-    if os.path.exists(trialParamFile):
-        os.remove(trialParamFile)
-    if os.path.exists(trialParamFile_priori):
-        os.remove(trialParamFile_priori)
-
     # Open summa output and attribute files for reading
     with nc.Dataset(outputFile, 'r') as ff:
         with nc.Dataset(attributeFile) as src:

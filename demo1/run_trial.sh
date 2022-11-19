@@ -1,7 +1,9 @@
 #!/bin/bash
 # Run interaction of Ostrich: update params, run and route model, calculate diagnostics.
 # Create a time tracking log to monitor pace of calibration.
-# When use on cluster: module load python; module load nco.
+
+#### Note: This bash file must be put in the same directory as Ostrich.exe.
+#### Note: When use on cluster: module load python; module load nco.
 
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
@@ -39,10 +41,10 @@ read_from_summa_route_config () {
 # ---------------------- Read configurations from control_file ----------------------------
 # -----------------------------------------------------------------------------------------
 
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -84,14 +86,14 @@ stat_output=${calib_path}/${stat_output}
 # -----------------------------------------------------------------------------------------
 
 echo "===== executing trial ====="
-date | awk '{printf("%s: ---- executing new trial ----\n",$0)}' >> $calib_path/timetrack.log
+date | awk '{printf("%s: run trial\n",$0)}' >> $calib_path/timetrack.log
 
 # ------------------------------------------------------------------------------
 # --- 1.  Update params                                                      ---
 # ------------------------------------------------------------------------------
 echo "--- updating params ---"
 date | awk '{printf("%s: update params\n",$0)}' >> $calib_path/timetrack.log
-python scripts/update_paramTrial.py $control_file
+python ../scripts/update_paramTrial.py $control_file
 echo " "
 
 # ------------------------------------------------------------------------------
@@ -139,7 +141,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo "--- calculating statistics ---"
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-python scripts/calculate_sim_stats.py $control_file 
+python ../scripts/calculate_sim_stats.py $control_file 
 
 date | awk '{printf("%s: done with trial\n",$0)}' >> $calib_path/timetrack.log
 

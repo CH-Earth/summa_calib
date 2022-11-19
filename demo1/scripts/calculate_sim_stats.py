@@ -4,7 +4,7 @@
 # #### Calculate model performance evaluation/statistical metrics.
 
 # import module
-import os, sys, datetime, argparse, glob
+import os, sys, datetime, argparse
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -12,7 +12,7 @@ import xarray as xr
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to calculate model evaluation statistics KGE.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
@@ -34,7 +34,7 @@ def get_modified_KGE(obs,sim):
     return kge
 
 def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''    
+    ''' Function to extract a given setting from the control_file.'''    
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -46,10 +46,10 @@ def read_from_control(control_file, setting):
     # Return this value    
     return substring
        
-def read_from_summa_route_config(control_file, setting):
+def read_from_summa_route_config(config_file, setting):
     '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
     # Open fileManager.txt or route_control and locate the line with setting
-    with open(control_file) as ff:
+    with open(config_file) as ff:
         for line in ff:
             line = line.strip()
             if line.startswith(setting):
@@ -62,7 +62,7 @@ def read_from_summa_route_config(control_file, setting):
 # main
 if __name__ == '__main__':
     
-    # an example: python 5b_calculate_sim_stats.py ../control_active.txt
+    # an example: python calculate_sim_stats.py ../control_active.txt
 
     # ---------------------------- Preparation -------------------------------
     # Process command line  
@@ -72,17 +72,17 @@ if __name__ == '__main__':
         sys.exit(0)
     # Otherwise continue
     args         = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
     
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path   = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')
 
-    # read mizuRoute setting and control file paths from controlFile.
+    # read mizuRoute setting and control file paths from control_file.
     route_settings_path = os.path.join(model_path, read_from_control(control_file, 'route_settings_relpath'))
     route_control       = os.path.join(route_settings_path, read_from_control(control_file, 'route_control'))
 

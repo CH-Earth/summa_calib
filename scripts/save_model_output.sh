@@ -1,14 +1,15 @@
 #!/bin/bash
 # Save use-specified files associated with each model run.
-# Preserved files will be stored in directories named "runNNN", where NNN is a counter.
-# Ostrich will pass the following arguments into this script: rank(1), trial(2), counter(3),
-# and objective function category(4). Here counter(3) is used. 
-# counter means the current count of model runs completed for the given rank and trial.
+# Preserved files will be stored in directories named "runNNN", where NNN is the iteration_idx.
+# This script needs two argument inputs: 
+# (1) control_file: "control_active.txt"
+# (2) iteration_idx: starting from one.
 
 # -----------------------------------------------------------------------------------------
-# ----------------------------- User specified input --------------------------------------
+# ----------------------------- User specified inputs -------------------------------------
 # -----------------------------------------------------------------------------------------
-control_file="control_active.txt"  # path of the active control file
+control_file=$1
+iteration_idx=$2
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
@@ -40,10 +41,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # ------------------------- Settings based on control_file --------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from control_file.
+# Read calibration path from controlFile.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from control_file.
+# Read hydrologic model path from controlFile.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -78,16 +79,24 @@ route_outFilePrefix="$(read_from_summa_route_config $route_control "<case_name>"
 stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
+# Get warm_start status
+warm_start="$(read_from_control $control_file "WarmStart")"
+
 # -----------------------------------------------------------------------------------------
 # -------------------------------------- Execute ------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 outDir="${calib_path}/output_archive"
-runDir=$outDir/run$3
-mkdir -p $runDir
 
-echo "$(date +"%Y-%m-%d %T"): saving model output files for run $3."
-date | awk '{printf("%s: saving model output\n\n",$0)}' >> $calib_path/timetrack.log
+# define runDir based on warm_start
+if [ "$warm_start" == "no" ]; then
+    runDir=$outDir/run$iteration_idx
+else
+    cum_num=$( find $outDir -mindepth 1 -maxdepth 1 -type d -name "run*" |wc -l | awk 'END{ print $1}')
+    current_num=$(( cum_num + 1 ))
+    runDir=$outDir/run$current_num
+fi
+mkdir -p $runDir
 
 # save multipliers.txt.
 cp $calib_path/multipliers.txt $runDir/
@@ -97,9 +106,7 @@ cp $trialParamFile $runDir/
 cp $summa_outputPath/${summa_outFilePrefix}_day.nc $runDir/
 cp $route_outputPath/${route_outFilePrefix}.mizuRoute.nc $runDir/
 
-# save model performance evaluation result and Ostrich exeOut files.
+# save model performance evaluation result.
 cp $stat_output $runDir/
-cp $calib_path/OstExeOut.txt $runDir/
 
 exit 0
-

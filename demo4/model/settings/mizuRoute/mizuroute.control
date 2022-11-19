@@ -12,9 +12,9 @@
 ! ****************************************************************************************************************************
 ! DEFINE DIRECTORIES 
 ! --------------------------
-<ancil_dir>            <model/directory/path>/settings/mizuRoute/            ! directory containing ancillary data (runoff mapping data, river network data)
-<input_dir>            <model/directory/path>/simulations/run1/SUMMA/        ! directory containing input data (runoff data)
-<output_dir>           <model/directory/path>/simulations/run1/mizuRoute/    ! directory containing output data
+<ancil_dir>            <model_directory_path>/settings/mizuRoute/            ! directory containing ancillary data (runoff mapping data, river network data)
+<input_dir>            <model_directory_path>/simulations/run1/SUMMA/        ! directory containing input data (runoff data)
+<output_dir>           <model_directory_path>/simulations/run1/mizuRoute/    ! directory containing output data
 ! ****************************************************************************************************************************
 ! DEFINE SIMULATION CONTROLS 
 ! --------------------------------------------

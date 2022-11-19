@@ -1,18 +1,13 @@
 #!/bin/bash
-#SBATCH --account=<account>
-#SBATCH --time=00:30:00
-#SBATCH --array=0-2
-#SBATCH --ntasks=2
-#SBATCH --mem-per-cpu=100MB
-#SBATCH --job-name=demo4summa
-#SBATCH --output=slurm_outputs/%x-%A_%a.out
+# Make a job list to run summa in split and thus in parallel across requested cores.
+# An example: ./make_summa_run_list.sh '../control_active.txt' 5
+# This script needs two argument inputs as explained as follows.
 
 # -----------------------------------------------------------------------------------------
-# ----------------------------- User specified input --------------------------------------
+# ----------------------------- User specified inputs -------------------------------------
 # -----------------------------------------------------------------------------------------
-control_file=$1   # "control_active.txt"
-nJob=3            # number of jobs in job array. Should be the same as in --array.
-nSubset=2         # number of GRU subsets in summa GRUs split. Should be the same as in --ntasks.
+control_file=$1  # path of the active control file
+nSubset=$2       # number of GRU subsets to split summa run
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
@@ -32,8 +27,8 @@ read_from_control () {
 read_from_summa_route_config () {
     input_file=$1
     setting=$2
-
-    line=$(grep -m 1 "^${setting}" $input_file)
+    
+    line=$(grep -m 1 "^${setting}" $input_file) 
     info=$(echo ${line%%!*}) # remove the part starting at '!'
     info="$( cut -d ' ' -f 2- <<< "$info" )" # get string after the first space
     info="${info%\'}" # remove the suffix '. Do nothing if no '.
@@ -44,6 +39,7 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # -------------------------- Read settings from control_file ------------------------------
 # -----------------------------------------------------------------------------------------
+
 # Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
@@ -57,8 +53,9 @@ summa_settings_path=$model_path/$summa_settings_relpath
 summa_filemanager="$(read_from_control $control_file "summa_filemanager")"
 summa_filemanager=$summa_settings_path/$summa_filemanager
 
-# Get summa executable path.
+# Read summa and mizuRoute executable paths.
 summaExe="$(read_from_control $control_file "summa_exe_path")"
+routeExe="$(read_from_control $control_file "route_exe_path")"
 
 # Read the total numebr of GRUs (used to calculate countGRU).
 summa_attributeFile="$(read_from_summa_route_config $summa_filemanager "attributeFile")"
@@ -66,26 +63,37 @@ summa_attributeFile=$summa_settings_path/$summa_attributeFile
 nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 7 )
 
 # -----------------------------------------------------------------------------------------
-# ------------------------------------- Execute -------------------------------------------
+# -------------------------------------- Execute ------------------------------------------
 # -----------------------------------------------------------------------------------------
-# (1) Calculate countGRU. 
-countGRU=$(( ( $nGRU / ($nJob * $nSubset) ) + ( $nGRU % ($nJob * $nSubset)  > 0 ) )) 
+# Copy summaExe to local to save summa_run_list.txt file size
+cp $summaExe summa.exe
+chmod 744 summa.exe
 
-# (2) Get the array ID for further use
-offset=$SLURM_ARRAY_TASK_ID 
+# Create summa_run_list.txt
+jobList=./summa_run_list.txt  
+rm -f $jobList # Remove existing file
 
-# (3) Calcualte gruStart and gruEnd for job array
-gruStart=$(( 1 + countGRU*nSubset*offset ))
-gruEnd=$(( countGRU*nSubset*(offset+1) ))
+# Calculate countGRU value. May need an adjustment based on the subsest startGRU and endGRU.
+countGRU=$(( ( $nGRU / $nSubset ) + ( $nGRU % $nSubset > 0 ) )) 
 
-# Check that we don't specify too many basins
-if [ $gruEnd -gt $nGRU ]; then
-    gruEnd=$nGRU
-fi
+# Loop to write each GRU subset per line
+iSubset=0
+while [ $iSubset -lt $nSubset ]; do
 
-# (4) Make summa_run_list for job array
-../scripts/make_summa_run_list_jobarray.sh $control_file $gruStart $gruEnd $nSubset $countGRU $offset
-
-# (5) Run job array 
-srun --kill-on-bad-exit=0 --multi-prog summa_run_lists/summa_run_list_${offset}.txt 
+    # Set gru bounds per subset; 
+    iStartGRU=$(( iSubset*countGRU + 1 ))
+    iEndGRU=$(( iStartGRU+countGRU-1))
+    
+    # Adjust iCountGRU to cap at max of nGRU
+    if [ $iEndGRU -gt $nGRU ]; then 
+        iCountGRU=$(( nGRU-iStartGRU+1 ))
+    else 
+        iCountGRU=$countGRU
+    fi     
+    
+    # Write a subset per line to jobList
+    echo $iSubset ./summa.exe -g $iStartGRU $iCountGRU -r never -m $summa_filemanager >> $jobList
+      
+    iSubset=$(( iSubset + 1 ))
+done
 
