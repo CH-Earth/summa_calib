@@ -3,16 +3,17 @@
 
 # #### Calculate model performance evaluation/statistical metrics.
 
-# import module
-import os, sys, datetime, argparse, glob
+# import packages
+import os, sys, datetime, argparse
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+# define functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to calculate model evaluation statistics KGE.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
@@ -34,7 +35,7 @@ def get_modified_KGE(obs,sim):
     return kge
 
 def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''    
+    ''' Function to extract a given setting from the control_file.'''    
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -46,10 +47,10 @@ def read_from_control(control_file, setting):
     # Return this value    
     return substring
        
-def read_from_summa_route_config(control_file, setting):
+def read_from_summa_route_config(config_file, setting):
     '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
     # Open fileManager.txt or route_control and locate the line with setting
-    with open(control_file) as ff:
+    with open(config_file) as ff:
         for line in ff:
             line = line.strip()
             if line.startswith(setting):
@@ -62,9 +63,9 @@ def read_from_summa_route_config(control_file, setting):
 # main
 if __name__ == '__main__':
     
-    # an example: python 8_calculate_sim_stats.py ../control_active.txt
+    # an example: python calculate_sim_stats.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) < 2:
@@ -72,17 +73,17 @@ if __name__ == '__main__':
         sys.exit(0)
     # Otherwise continue
     args         = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
     
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path   = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')
 
-    # read mizuRoute setting and control file paths from controlFile.
+    # read mizuRoute setting and control file paths from control_file.
     route_settings_path = os.path.join(model_path, read_from_control(control_file, 'route_settings_relpath'))
     route_control       = os.path.join(route_settings_path, read_from_control(control_file, 'route_control'))
 
@@ -122,7 +123,8 @@ if __name__ == '__main__':
     df_sim.index = pd.to_datetime(df_sim.index)
 
     # --- Read observed flow (cfs or cms) --- 
-    # Note: this is hard coded for the demo observation file. Users can modify based on their observation file.
+    # Note: this is hard coded for the demo observation file which has two columns of data: [0] date and [1] flow.
+    # Users can modify based on their observation file.
     df_obs = pd.read_csv(obs_file, index_col=0, na_values=["-99.0","-999.0","-9999.0","NA"],
                          usecols=[0,1],parse_dates=True, infer_datetime_format=True)  
     df_obs.columns = ['obs'] 

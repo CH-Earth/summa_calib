@@ -4,7 +4,7 @@
 #SBATCH --array=0-2
 #SBATCH --ntasks=2
 #SBATCH --mem-per-cpu=100MB
-#SBATCH --job-name=demo4Summa
+#SBATCH --job-name=demo4summa
 #SBATCH --output=slurm_outputs/%x-%A_%a.out
 
 # -----------------------------------------------------------------------------------------
@@ -44,10 +44,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # -------------------------- Read settings from control_file ------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -84,7 +84,7 @@ if [ $gruEnd -gt $nGRU ]; then
 fi
 
 # (4) Make summa_run_list for job array
-./scripts/make_summa_run_list_jobarray.sh $control_file $gruStart $gruEnd $nSubset $countGRU $offset
+../scripts/make_summa_run_list_jobarray.sh $control_file $gruStart $gruEnd $nSubset $countGRU $offset
 
 # (5) Run job array 
 srun --kill-on-bad-exit=0 --multi-prog summa_run_lists/summa_run_list_${offset}.txt 

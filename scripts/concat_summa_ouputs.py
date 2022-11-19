@@ -3,37 +3,23 @@
 
 # #### Concatenate the outputs of a split domain summa run.
 
-import os, sys
-from glob import glob
+import os, sys, argparse
 import netCDF4 as nc
 import numpy as np
-import argparse
 from datetime import datetime
 import concurrent.futures
+from glob import glob
 
+# deifne functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to concatenate summa outputs from multiple GRU subsets.')
-    parser.add_argument('controlFile', type=str, help='path of the overall control file.')
+    parser.add_argument('control_file', type=str, help='path of the overall control file.')
     args = parser.parse_args()
     return(args)
 
-
-def read_from_summa_route_config(control_file, setting):
-    '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
-    # Open fileManager.txt or route_control and locate the line with setting
-    with open(control_file) as ff:
-        for line in ff:
-            line = line.strip()
-            if line.startswith(setting):
-                break
-    # Extract the setting's value
-    substring = line.split('!',1)[0].strip().split(None,1)[1].strip("'")
-    # Return this value    
-    return substring
-
 def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''      
+    ''' Function to extract a given setting from the control_file.'''      
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -45,6 +31,18 @@ def read_from_control(control_file, setting):
     # Return this value    
     return substring
 
+def read_from_summa_route_config(config_file, setting):
+    '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
+    # Open fileManager.txt or route_control and locate the line with setting
+    with open(config_file) as ff:
+        for line in ff:
+            line = line.strip()
+            if line.startswith(setting):
+                break
+    # Extract the setting's value
+    substring = line.split('!',1)[0].strip().split(None,1)[1].strip("'")
+    # Return this value    
+    return substring
 
 def concat_summa_outputs(args):
     '''Function to read gru and hru dimensioned variable values and return a dictionary.'''
@@ -68,9 +66,9 @@ def concat_summa_outputs(args):
 
 if __name__ == '__main__':
     
-    # an example: python 6b_concat_summa_ouputs.py ../control_active.txt
+    # an example: python concat_summa_ouputs.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) < 2:
@@ -78,12 +76,12 @@ if __name__ == '__main__':
         sys.exit(0)
     # Otherwise continue
     args         = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
     
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')
@@ -121,7 +119,7 @@ if __name__ == '__main__':
         
         time_num = len(src.dimensions['time'])
         
-        # 3-1. Identify gru and hru dimensioned variables
+        # (1) Identify gru and hru dimensioned variables
         gru_vars = [] # a list of gru dimensioned variable names, gru axis in variable dimension for concatenation. 
         hru_vars = [] # a list of hru dimensioned variable names, hru axis in variable dimension for concatenation. 
         for name, variable in src.variables.items():
@@ -134,7 +132,7 @@ if __name__ == '__main__':
         gru_vars_num = len(gru_vars)
         hru_vars_num = len(hru_vars)
         
-        # 3-2. Create the base dictionary Dict
+        # (2) Create the base dictionary Dict
         for j in range(gru_vars_num):
             gru_var_name = gru_vars[j][0]
             dim_index = gru_vars[j][1]

@@ -40,10 +40,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # ------------------------- Settings based on control_file --------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -79,7 +79,7 @@ stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
 # -----------------------------------------------------------------------------------------
-# --------------------------------------- Save --------------------------------------------
+# -------------------------------------- Execute ------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 outDir="${calib_path}/output_archive"
@@ -87,7 +87,7 @@ runDir=$outDir/run$3
 mkdir -p $runDir
 
 echo "$(date +"%Y-%m-%d %T"): saving model output files for run $3."
-date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
+date | awk '{printf("%s: saving model output\n\n",$0)}' >> $calib_path/timetrack.log
 
 # save multipliers.txt.
 cp $calib_path/multipliers.txt $runDir/

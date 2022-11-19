@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Submit DDS Python code-based calibration jobs via depedent jobs and job array.
+
+#### Note: When use on cluster: module load python; module load nco.
+
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
@@ -10,7 +14,7 @@ route_job_file=run_route.sh
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
-# Function to extract a given setting from the controlFile.
+# Function to extract a given setting from the control_file.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -37,10 +41,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # -------------------------- Read settings from control_file ------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -67,15 +71,15 @@ initial_option="$(read_from_control $control_file "initial_option")"
 echo "===== Prepare ====="
 # (1) Generate the a priori parameter file for calibration.
 echo "----- Generate a priori parameter file -----"
-python scripts/generate_priori_trialParam.py $control_file
+python ../scripts/generate_priori_trialParam.py $control_file
 
 # (2) Calculate the parameter multiplier lower and upper bounds.
 echo "----- Calculate multiplier bounds -----"
-python scripts/calculate_multp_bounds.py $control_file
+python ../scripts/calculate_multp_bounds.py $control_file
 
 # (3) Update summa and mizuRoute start/end time based on control_file.
 echo "----- Update summa and mizuRoute configuration files -----"
-python scripts/update_model_config_files.py $control_file
+python ../scripts/update_model_config_files.py $control_file
 
 # (4) Create slurm output folder if not exist
 if [ ! -d slurm_outputs ]; then mkdir slurm_outputs; fi
@@ -94,13 +98,14 @@ for iteration_idx in $(seq 1 $max_iterations); do
         # ------------------------------------------------------------------------------
         # --- 1.  Generate params via DDS                                            ---
         # ------------------------------------------------------------------------------
-        python scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
-            multiplier_bounds.txt multipliers.tpl multipliers.txt calib_record.txt
+        python ../scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+        $calib_path/multiplier_bounds.txt $calib_path/multipliers.tpl \
+        $calib_path/multipliers.txt $calib_path/calib_converge_history.txt
 
         # ------------------------------------------------------------------------------
         # --- 2.  Update params for summa                                             ---
         # ------------------------------------------------------------------------------
-        python scripts/update_paramTrial.py $control_file
+        python ../scripts/update_paramTrial.py $control_file
 
         # ------------------------------------------------------------------------------
         # --- 3.  Submit run summa & route                                           ---
@@ -115,7 +120,7 @@ for iteration_idx in $(seq 1 $max_iterations); do
         echo summa $current
         
         # (3) Submit depedent job: run route and all others except run summa
-        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
+        next=$( sbatch --dependency=afterany:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
         current=$next
         echo route $current
 
@@ -128,12 +133,12 @@ for iteration_idx in $(seq 1 $max_iterations); do
         # --- 1.  Submit run summa & route                                           ---
         # ------------------------------------------------------------------------------
         # (1) Submit depedent job: run summa (array job)
-        next=$( sbatch --dependency=afterok:${current} ${summa_job_file} ${control_file} | awk '{ print $4 }' )
+        next=$( sbatch --dependency=afterany:${current} ${summa_job_file} ${control_file} | awk '{ print $4 }' )
         current=$next
         echo summa $current
 
         # (2) Submit depedent job: run route and all others except run summa
-        next=$( sbatch --dependency=afterok:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
+        next=$( sbatch --dependency=afterany:${current} ${route_job_file} ${control_file} ${iteration_idx} | awk '{ print $4 }' )
         current=$next
         echo route $current
     fi

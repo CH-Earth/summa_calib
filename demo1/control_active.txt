@@ -5,7 +5,7 @@
 # Note on path specification. If deviating from default paths, a full path must be specified. E.g. '/home/user/non-default/path'
 
 ## ---- PART 1. Paramerter estimation settings ---- 
-calib_path             | <demo/directory/path>    # (01) Path where parameter estimation is stored. e.g., /____/demo1
+calib_path             | <demo_directory_path>    # (01) Path where parameter estimation is stored. e.g., /____/demo1
 object_parameters      | k_macropore, k_soil, theta_sat, aquiferBaseflowExp, aquiferBaseflowRate, qSurfScale, summerLAI, frozenPrecipMultip, heightCanopyBottom, heightCanopyTop, routingGammaScale, routingGammaShape, Fcapil  # (02) Parameter names to be optimized or evaluated. The parameter names should be the same as they are in the summa source code.
 ostIn_tpl              | tpl/ostIn.DDS.tpl     # (03) Name of ostIn template file. Input file in '[calib_path]/[ostIn_tpl]'. 
 max_iterations         | 10                    # (04) Maximum Number of iterations for optimization. Optional input, depending on the optimization method. Eg, DDS needs this configuration.
@@ -16,11 +16,11 @@ model_path             | default               # (06) Path of destination hydrol
 
 summa_settings_relpath | settings/SUMMA        # (07) Relative path of summa model settings folder, relative to [model_path]. 
 summa_filemanager      | fileManager.txt       # (08) Name of the SUMMA master configuration file.
-summa_exe_path         | <summa/exe/path>      # (09) summa executable path. e.g., /____/summa.exe
+summa_exe_path         | <summa_exe_path>      # (09) summa executable path. e.g., /____/summa.exe
 
 route_settings_relpath | settings/mizuRoute    # (10) Relative path of summa model settings folder, relative to [model_path]. 
 route_control          | mizuroute.control     # (11) Name of the mizuRoute configuration file.
-route_exe_path         | <mizuroute/exe/path>  # (12) muziroute executable path, e.g., /____/mizuroute.exe
+route_exe_path         | <mizuroute_exe_path>  # (12) muziroute executable path, e.g., /____/mizuroute.exe
 
 simStartTime           | 2008-07-15 00:00      # (13) Start time for hydrologic simualtion, in format yyyy-mm-dd hh:mm. 
 simEndTime             | 2008-07-31 23:00      # (14) End time for hydrologic simualtion, in format yyyy-mm-dd hh:mm.  

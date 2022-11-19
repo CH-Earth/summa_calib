@@ -1,7 +1,9 @@
 #!/bin/bash
 # Run interaction of Ostrich: update params, run and route model, calculate diagnostics.
 # Create a time tracking log to monitor pace of calibration.
-# When use on cluster: module load python; module load nco.
+
+#### Note: This bash file must be put in the same directory as Ostrich.exe.
+#### Note: When use on cluster: module load python; module load nco.
 
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
@@ -39,10 +41,10 @@ read_from_summa_route_config () {
 # ---------------------- Read configurations from control_file ----------------------------
 # -----------------------------------------------------------------------------------------
 
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -91,7 +93,7 @@ date | awk '{printf("%s: ---- executing new trial ----\n",$0)}' >> $calib_path/t
 # ------------------------------------------------------------------------------
 echo "--- updating params ---"
 date | awk '{printf("%s: update params\n",$0)}' >> $calib_path/timetrack.log
-python scripts/update_paramTrial.py $control_file
+python ../scripts/update_paramTrial.py $control_file
 echo " "
 
 # ------------------------------------------------------------------------------
@@ -104,13 +106,13 @@ date | awk '{printf("%s: run summa\n",$0)}' >> $calib_path/timetrack.log
 if [ ! -d $summa_outputPath ]; then mkdir -p $summa_outputPath; fi
 rm -f $summa_outputPath/${summa_outFilePrefix}*
 
-# (2) Run Summa (use multiples cores on the allocated nodes).
+# (2) Run summa (use multiples cores on the allocated nodes).
 srun --kill-on-bad-exit=0 --multi-prog ./summa_run_list.txt
 wait
 
 # (3) Merge GRU subsets' daily output runoff into one file for routing. 
 echo concatenate summa output files in $summa_outputPath
-python scripts/concat_summa_ouputs.py $control_file 
+python ../scripts/concat_summa_ouputs.py $control_file 
 
 # ------------------------------------------------------------------------------
 # --- 3.  Post-process summa output for route                                ---
@@ -132,18 +134,17 @@ date | awk '{printf("%s: run mizuRoute\n",$0)}' >> $calib_path/timetrack.log
 if [ ! -d $route_outputPath ]; then mkdir -p $route_outputPath; fi
 rm -f $route_outputPath/${route_outFilePrefix}*
 
-###############################################
-# NOTE: mpi_mizuroute needs more understanding. eg, how it handles run1_day.nc when sim period=15 days? 
-# why output is written multiple times. Overwrite at the same time, and thus permission denied issue.
-# # (2) Prepare files for mipi mizuRoute.
-# cp $route_settings_path/param.nml.default $summa_outputPath/param.nml.default
-# echo "${summa_outFilePrefix}_day.nc" > $summa_outputPath/summaOutputFileList.txt
-
-# # (3) Run mizuRoute.
-# module load netcdf netcdf-fortran pnetcdf openmpi
-# srun ${routeExe} $route_control
-# wait
-###############################################
+# ##########################################
+# NOTE: mip mizuroute needs more tests.
+## (2) Prepare files for mipi mizuRoute.
+#cp $route_settings_path/param.nml.default $summa_outputPath/param.nml.default
+#echo "${summa_outFilePrefix}_day.nc" > $summa_outputPath/summaOutputFileList.txt
+#
+## (3) Run mizuRoute.
+#module load netcdf netcdf-fortran pnetcdf openmpi
+#srun ${routeExe} $route_control
+#wait
+#############################################
 
 # (2) Run mizuRoute.
 ${routeExe} $route_control
@@ -157,7 +158,7 @@ ncrcat -O -h $route_outputPath/${route_outFilePrefix}* $route_outputPath/${route
 # ------------------------------------------------------------------------------
 echo "--- calculating statistics ---"
 date | awk '{printf("%s: calculate statistics\n",$0)}' >> $calib_path/timetrack.log
-python scripts/calculate_sim_stats.py $control_file 
+python ../scripts/calculate_sim_stats.py $control_file 
 
 date | awk '{printf("%s: done with trial\n",$0)}' >> $calib_path/timetrack.log
 

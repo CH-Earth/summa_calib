@@ -9,20 +9,21 @@
 # 3. Calculate the multiplier lower/upper bounds.
 # 4. Save multiplier bounds into a text.
 
-# import module
-import os, sys, argparse, shutil
+# import packages
+import os, sys, argparse
 import numpy as np
 import xarray as xr
 
+# define functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to caluclate the multiplier bounds.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
-def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''      
+def read_from_control(config_file, setting):
+    ''' Function to extract a given setting from the config_file.'''      
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -34,10 +35,10 @@ def read_from_control(control_file, setting):
     # Return this value    
     return substring
 
-def read_from_summa_route_config(control_file, setting):
+def read_from_summa_route_config(config_file, setting):
     '''Function to extract a given setting from the summa or mizuRoute configuration file.'''
     # Open fileManager.txt or route_control and locate the line with setting
-    with open(control_file) as ff:
+    with open(config_file) as ff:
         for line in ff:
             line = line.strip()
             if line.startswith(setting):
@@ -76,22 +77,22 @@ def str_to_float(data_str):
 # main
 if __name__ == '__main__':
     
-    # an example: python 2_prepare_multp_bounds.py ../control_active.txt
+    # an example: python prepare_multp_bounds.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
-        print("Usage: %s <controlFile>" % sys.argv[0])
+        print("Usage: %s <control_file>" % sys.argv[0])
         sys.exit(0)
     # Otherwise continue
     args = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
 
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')
@@ -107,7 +108,7 @@ if __name__ == '__main__':
     if 'heightCanopyTop' in object_params:
         object_multps.append('thickness'+'_multp')  
         object_multps.remove('heightCanopyTop'+'_multp')
-
+    object_multps_num = len(object_multps)
 
     # #### 2. Read param lower/upper limits
     # Read param range from basinParamInfo.txt and localParamInfo.txt.
@@ -117,12 +118,15 @@ if __name__ == '__main__':
     summa_filemanager = read_from_control(control_file, 'summa_filemanager')
     summa_filemanager = os.path.join(summa_setting_path, summa_filemanager)
 
+    # Read file names from summa_filemanager
     basinParam = read_from_summa_route_config(summa_filemanager, 'globalGruParamFile')
     localParam = read_from_summa_route_config(summa_filemanager, 'globalHruParamFile')
-
+    
+    # Obtain file paths by adding to summa_setting_path
     basinParam = os.path.join(summa_setting_path, basinParam)
     localParam = os.path.join(summa_setting_path, localParam)
-
+    
+    # Read basin and local param names, min and max bounds from basinParam and localParam files.
     basin_param_names, basin_param_min, basin_param_max = read_basinParam_localParam(basinParam)    
     local_param_names, local_param_min, local_param_max = read_basinParam_localParam(localParam)
 
@@ -132,17 +136,18 @@ if __name__ == '__main__':
 
     trialParamFile = read_from_summa_route_config(summa_filemanager, 'trialParamFile')
     trialParamFile = os.path.join(summa_settings_path, trialParamFile)
-
-    trialParamFile_priori = trialParamFile.split('.nc')[0] + '.priori.nc' # a priori param file generated from 1_generate_priori_trialParam.py.
+    
+    # a priori param file generated from 1_generate_priori_trialParam.py.
+    trialParamFile_priori = trialParamFile.split('.nc')[0] + '.priori.nc' 
     trialParamFile_priori = os.path.join(summa_settings_path, trialParamFile_priori)
  
     # #### 4. Calculate multiplier lower/upper bounds
     multp_bounds_list = []   # list of [multiplier name, initial, lower, upper]. 
 
     with xr.open_dataset(trialParamFile_priori) as f:
-        for i in range(len(object_multps)):
-            multp_name = object_multps[i]
-            param_name = multp_name.replace('_multp','')
+        for i in range(object_multps_num):
+            multp_name = object_multps[i]                # multiplier name (eg, k_soil_multp)
+            param_name = multp_name.replace('_multp','') # SUMMA parameter name (eg, k_soil)
 
             # (1) Read a priori param values.
             if param_name != 'thickness': 
@@ -174,7 +179,8 @@ if __name__ == '__main__':
                     # the max of all other variables of soil_params.
                     soil_params = ['theta_res', 'critSoilWilting', 'critSoilTranspire', 'fieldCapacity']
 
-                    # (a) Use a multi-layer array to store the a priori soil_params values and the min 'theta_sat' values per hru.
+                    # (a) Use a multi-layer array to store the a priori soil_params values \
+                    # and the min 'theta_sat' values per hru.
                     nhru  = f.dims['hru']                               # number of hrus. len(f[param_name])
                     nsoil = len(soil_params)+1                          # soil_params variables + 'theta_sat'
                     soil_params_priori_layers = np.ones((nhru,nsoil))                    
@@ -183,7 +189,8 @@ if __name__ == '__main__':
                         soil_param = soil_params[isoil]
                         soil_params_priori_layers[:,isoil] = f[soil_param].values                    
                     
-                    soil_params_priori_layers[:,-1] = local_param_min[index]*np.ones(param_priori_shp)  # 'theta_sat' local_param_min.
+                    # add 'theta_sat' local_param_min to the last layer.
+                    soil_params_priori_layers[:,-1] = local_param_min[index]*np.ones(param_priori_shp)  
                     
                     # (b) 'theta_sat' param_min = the max among the a priori values of \
                     # all soil_param variables and the local_param_min per hru.
@@ -259,7 +266,29 @@ if __name__ == '__main__':
             # (5) Append to results to multp_bounds_list.
             multp_bounds_list.append([multp_name, multp_initial, multp_min, multp_max])
 
-    # #### 5. Save multiplier information into text.
+    # #### 5. Save multiplier information into text.   
     multp_bounds = os.path.join(calib_path, 'multiplier_bounds.txt')
-    np.savetxt(multp_bounds, multp_bounds_list, fmt='%s', \
-               delimiter=',',header='MultiplierName,InitialValue,LowerLimit,UpperLimit.')    
+    if os.path.exists(multp_bounds):
+        os.remove(multp_bounds)
+    with open(multp_bounds, 'w') as f:
+        f.write('# MultiplierName,InitialValue,LowerLimit,UpperLimit.\n')
+        for i in range(object_multps_num):
+            iList = multp_bounds_list[i]
+            f.write('%s,%.6f,%.6f,%.6f\n'%(iList[0],iList[1],iList[2],iList[3]))
+
+    # #### 6. Create multiplier template file and multiplier txt file for the first time.
+    # Create a multiplier template file. Write multiplier names.
+    multp_tpl = os.path.join(calib_path, 'multipliers.tpl')
+    if os.path.exists(multp_tpl):
+        os.remove(multp_tpl)
+    with open(multp_tpl, 'w') as f:
+        for i in range(object_multps_num):
+            f.write('%s\n'%(multp_bounds_list[i][0]))
+ 
+    # Create a multiplier txt file. Write multiplier initial values.
+    multp_value = os.path.join(calib_path, 'multipliers.txt')
+    if os.path.exists(multp_value):
+        os.remove(multp_value)
+    with open(multp_value, 'w') as f:
+        for i in range(object_multps_num):
+            f.write('%.6f\n'%(multp_bounds_list[i][1]))

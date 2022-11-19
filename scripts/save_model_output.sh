@@ -1,10 +1,13 @@
 #!/bin/bash
-# ave use-specified files associated with each model run.
+# Save use-specified files associated with each model run.
 # Preserved files will be stored in directories named "runNNN", where NNN is the iteration_idx.
 # This script needs two argument inputs: 
 # (1) control_file: "control_active.txt"
 # (2) iteration_idx: starting from one.
 
+# -----------------------------------------------------------------------------------------
+# ----------------------------- User specified inputs -------------------------------------
+# -----------------------------------------------------------------------------------------
 control_file=$1
 iteration_idx=$2
 
@@ -76,12 +79,23 @@ route_outFilePrefix="$(read_from_summa_route_config $route_control "<case_name>"
 stat_output="$(read_from_control $control_file "stat_output")"
 stat_output=${calib_path}/${stat_output}
 
+# Get warm_start status
+warm_start="$(read_from_control $control_file "WarmStart")"
+
 # -----------------------------------------------------------------------------------------
-# --------------------------------------- Save --------------------------------------------
+# -------------------------------------- Execute ------------------------------------------
 # -----------------------------------------------------------------------------------------
 
 outDir="${calib_path}/output_archive"
-runDir=$outDir/run$iteration_idx
+
+# define runDir based on warm_start
+if [ "$warm_start" == "no" ]; then
+    runDir=$outDir/run$iteration_idx
+else
+    cum_num=$( find $outDir -mindepth 1 -maxdepth 1 -type d -name "run*" |wc -l | awk 'END{ print $1}')
+    current_num=$(( cum_num + 1 ))
+    runDir=$outDir/run$current_num
+fi
 mkdir -p $runDir
 
 # save multipliers.txt.

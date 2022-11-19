@@ -6,20 +6,21 @@
 # 1. prepare Ostrich parameter pair files based on multiplier bounds file.
 # 2. write ostIn.txt based on ostIn.tpl.
 
-# import module
+# import packages
 import os, sys, argparse, shutil, time
 import netCDF4 as nc
 import numpy as np
 
+# define functions
 def process_command_line():
     '''Parse the commandline'''
     parser = argparse.ArgumentParser(description='Script to create Ostrich ostIn.txt.')
-    parser.add_argument('controlFile', help='path of the active control file.')
+    parser.add_argument('control_file', help='path of the active control file.')
     args = parser.parse_args()
     return(args)
 
 def read_from_control(control_file, setting):
-    ''' Function to extract a given setting from the controlFile.'''      
+    ''' Function to extract a given setting from the control_file.'''      
     # Open 'control_active.txt' and locate the line with setting
     with open(control_file) as ff:
         for line in ff:
@@ -35,22 +36,22 @@ def read_from_control(control_file, setting):
 # main
 if __name__ == '__main__':
     
-    # an example: python 4_create_ostIn.py ../control_active.txt
+    # an example: python create_ostIn.py ../control_active.txt
 
-    # ---------------------------- Preparation -------------------------------
+    # ------------------------------ Prepare ---------------------------------
     # Process command line  
     # Check args
     if len(sys.argv) != 2:
-        print("Usage: %s <controlFile>" % sys.argv[0])
+        print("Usage: %s <control_file>" % sys.argv[0])
         sys.exit(0)
     # Otherwise continue
     args = process_command_line()    
-    control_file = args.controlFile
+    control_file = args.control_file
 
-    # Read calibration path from controlFile
+    # Read calibration path from control_file
     calib_path = read_from_control(control_file, 'calib_path')
 
-    # Read hydrologic model path from controlFile
+    # Read hydrologic model path from control_file
     model_path = read_from_control(control_file, 'model_path')
     if model_path == 'default':
         model_path = os.path.join(calib_path, 'model')
@@ -58,24 +59,15 @@ if __name__ == '__main__':
     # -----------------------------------------------------------------------
 
     # #### 1. Prepare Ostrich parameter pair files
+    # Specify the multiplier template file and multiplier txt file.
+    multp_tpl = os.path.join(calib_path, 'multipliers.tpl')
+    multp_value = os.path.join(calib_path, 'multipliers.txt')
+
     # Read multiplier bounds file generated from 2_calculate_multp_bounds.py.
     multp_bounds     = os.path.join(calib_path, 'multiplier_bounds.txt')
     multp_bounds_arr = np.loadtxt(multp_bounds, dtype='str', delimiter=',') # MultiplierName,InitialValue,LowerLimit,UpperLimit.
     multp_num        = len(multp_bounds_arr)
-
-    # Create a multiplier template file. Write multiplier names.
-    multp_tpl = os.path.join(calib_path, 'multipliers.tpl')
-    if os.path.exists(multp_tpl):
-        os.remove(multp_tpl)
-    np.savetxt(multp_tpl, multp_bounds_arr[:,0], fmt='%s')
-
-    # Create a multiplier txt file. Write multiplier initial values.
-    multp_value = os.path.join(calib_path, 'multipliers.txt')
-    if os.path.exists(multp_value):
-        os.remove(multp_value)
-    np.savetxt(multp_value, multp_bounds_arr[:,1], fmt='%s')
     
-
     # #### 2. Write ostIn.txt based on ostIn.tpl   
     # Identify ostIn template and txt file.
     ostIn_src = os.path.join(calib_path, read_from_control(control_file, 'ostIn_tpl'))
@@ -142,7 +134,7 @@ if __name__ == '__main__':
                         if warm_status.lower() == 'yes':
                             line_strip = 'OstrichWarmStart yes'
                         elif warm_status.lower() == 'no':
-                            line_strip = 'OstrichWarmStart no' # default is no 
+                            line_strip = 'OstrichWarmStart no' 
 
                     # (5) Update MaxIterations based on control_active.txt 
                     # Note: this is applied only if the DDS algorithm is used.

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Run DDS Python code-based calibration.
+
+#### Note: When use on cluster: module load python; module load nco.
+
 # -----------------------------------------------------------------------------------------
 # ----------------------------- User specified input --------------------------------------
 # -----------------------------------------------------------------------------------------
@@ -8,7 +12,7 @@ control_file=control_active.txt
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
-# Function to extract a given setting from the controlFile.
+# Function to extract a given setting from the control_file.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -35,10 +39,10 @@ read_from_summa_route_config () {
 # -----------------------------------------------------------------------------------------
 # -------------------------- Read settings from control_file ------------------------------
 # -----------------------------------------------------------------------------------------
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -69,15 +73,15 @@ stat_output=${calib_path}/${stat_output}
 echo "===== Prepare ====="
 # (1) Generate the a priori parameter file for calibration.
 echo "----- Generate a priori parameter file -----"
-python scripts/generate_priori_trialParam.py $control_file
+python ../scripts/generate_priori_trialParam.py $control_file
 
 # (2) Calculate the parameter multiplier lower and upper bounds.
 echo "----- Calculate multiplier bounds -----"
-python scripts/calculate_multp_bounds.py $control_file
+python ../scripts/calculate_multp_bounds.py $control_file
 
 # (3) Update summa and mizuRoute start/end time based on control_file.
 echo "----- Update summa and mizuRoute configuration files -----"
-python scripts/update_model_config_files.py $control_file
+python ../scripts/update_model_config_files.py $control_file
 
 
 # ### Run DDS ###
@@ -92,36 +96,37 @@ for iteration_idx in $(seq 1 $max_iterations); do
     echo generate param sett
     date | awk '{printf("%s: generate parameter set\n",$0)}' >> $calib_path/timetrack.log
     
-    python scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
-    multiplier_bounds.txt multipliers.tpl multipliers.txt ParamValuesRecord.txt
+    python ../scripts/DDS.py $iteration_idx $max_iterations $initial_option $warm_start \
+    $calib_path/multiplier_bounds.txt $calib_path/multipliers.tpl \
+    $calib_path/multipliers.txt $calib_path/calib_converge_history.txt
     
     # # ----------------------------------------------------------------------------
     # --- 2.  conduct run_trial.sh                                               ---
     # ------------------------------------------------------------------------------
     echo run trial
     date | awk '{printf("%s: run trial\n",$0)}' >> $calib_path/timetrack.log    
-    ./run_trial.sh
+    ./run_trial.sh > ExeOut.txt
     
     # # ----------------------------------------------------------------------------
     # --- 3.  save param and obj                                                  ---
     # ------------------------------------------------------------------------------
     echo save param and obj
     date | awk '{printf("%s: save param and obj\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/save_param_obj.py $control_file $iteration_idx
+    python ../scripts/save_param_obj.py $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 4.  save model output                                              ---
     # ------------------------------------------------------------------------------
     echo save model output
     date | awk '{printf("%s: saving model output\n",$0)}' >> $calib_path/timetrack.log
-    ./scripts/save_model_output.sh $control_file $iteration_idx
+    ../scripts/save_model_output.sh $control_file $iteration_idx
 
     # # ----------------------------------------------------------------------------
     # --- 5.  save the best output                                              ---
     # ------------------------------------------------------------------------------
     echo save best output
     date | awk '{printf("%s: save best output\n\n",$0)}' >> $calib_path/timetrack.log
-    python scripts/save_best.py $control_file $iteration_idx
+    python ../scripts/save_best.py $control_file $iteration_idx
 
 done
 

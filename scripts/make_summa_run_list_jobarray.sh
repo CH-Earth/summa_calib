@@ -1,17 +1,22 @@
 #!/bin/bash
-# Make a job list to run summa in parallel across requested cores.
-# An example: ./5_make_summa_run_list.sh '../control_active.txt' 5
+# Make a job list to run summa in split and thus in parallel across requested cores.
+# Note: This code is used for array jobs (via offset).
+# This script needs six argument inputs as explained as follows.
 
 # -----------------------------------------------------------------------------------------
-# ----------------------------- User specified input --------------------------------------
+# ----------------------------- User specified inputs -------------------------------------
 # -----------------------------------------------------------------------------------------
-control_file=$1  # path of the active control file
-nSubset=$2       # number of GRU subsets to split summa run
+control_file=$1   # "control_active.txt"
+startGRU=$2       # startGRU index 
+endGRU=$3         # endGRU index 
+nSubset=$4        # number of GRU subsets
+countGRU=$5       # size of a GRU subset  
+offset=$6         # array job index (Should start from zero for calculations below)
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------------ Functions ------------------------------------------
 # -----------------------------------------------------------------------------------------
-# Function to extract a given setting from the controlFile.
+# Function to extract a given setting from the control_file.
 read_from_control () {
     control_file=$1
     setting=$2
@@ -39,10 +44,10 @@ read_from_summa_route_config () {
 # -------------------------- Read settings from control_file ------------------------------
 # -----------------------------------------------------------------------------------------
 
-# Read calibration path from controlFile.
+# Read calibration path from control_file.
 calib_path="$(read_from_control $control_file "calib_path")"
 
-# Read hydrologic model path from controlFile.
+# Read hydrologic model path from control_file.
 model_path="$(read_from_control $control_file "model_path")"
 if [ "$model_path" = "default" ]; then model_path="${calib_path}/model"; fi
 
@@ -52,14 +57,8 @@ summa_settings_path=$model_path/$summa_settings_relpath
 summa_filemanager="$(read_from_control $control_file "summa_filemanager")"
 summa_filemanager=$summa_settings_path/$summa_filemanager
 
-# Read summa and mizuRoute executable paths.
+# Get summa executable path.
 summaExe="$(read_from_control $control_file "summa_exe_path")"
-routeExe="$(read_from_control $control_file "route_exe_path")"
-
-# Read the total numebr of GRUs (used to calculate countGRU).
-summa_attributeFile="$(read_from_summa_route_config $summa_filemanager "attributeFile")"
-summa_attributeFile=$summa_settings_path/$summa_attributeFile
-nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 7 )
 
 # -----------------------------------------------------------------------------------------
 # -------------------------------------- Execute ------------------------------------------
@@ -68,31 +67,28 @@ nGRU=$( ncks -Cm -v gruId -m $summa_attributeFile | grep 'gru = '| cut -d' ' -f 
 cp $summaExe summa.exe
 chmod 744 summa.exe
 
-# Create summa_run_list.txt
-jobList=./summa_run_list.txt  
-rm -f $jobList # Remove existing file
-
-# Calculate a trial countGRU value. May need an adjustment based on startGRU and endGRU
-countGRU_try=$(( ( $nGRU / $nSubset ) + ( $nGRU % $nSubset > 0 ) )) 
+# remove existing summa_run_list.txt.
+[ ! -d summa_run_lists ] && mkdir summa_run_lists
+jobList=summa_run_lists/summa_run_list_${offset}.txt
+rm -f $jobList
 
 # Loop to write each GRU subset per line
 iSubset=0
 while [ $iSubset -lt $nSubset ]; do
 
     # Set gru bounds per subset; 
-    startGRU=$(( iSubset*countGRU_try + 1 ))
-    endGRU=$(( startGRU+countGRU_try-1))
+    iStartGRU=$(( startGRU + iSubset*countGRU ))
+    iEndGRU=$(( iStartGRU + countGRU - 1 ))
     
-    # Adjust countGRU to cap at max of nGRU
-    if [ $endGRU -gt $nGRU ]; then 
-        countGRU=$(( nGRU-startGRU+1 ))
+    # Adjust countGRU to cap at max of endGRU
+   if [ $iEndGRU -gt $endGRU ]; then 
+        iCountGRU=$(( endGRU - iStartGRU + 1 ))
     else 
-        countGRU=$countGRU_try
-    fi     
-    
+        iCountGRU=$countGRU
+    fi    
+
     # Write a subset per line to jobList
-    echo $iSubset ./summa.exe -g $startGRU $countGRU -r never -m $summa_filemanager >> $jobList
+    echo $iSubset ./summa.exe -g $iStartGRU $iCountGRU -r never -m $summa_filemanager >> $jobList
       
     iSubset=$(( iSubset + 1 ))
 done
-
