@@ -1,0 +1,11 @@
+slurm-*.out
+output*.out
+
+# notebook stuff
+.ipynb_checkpoints
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore environment configuration files
+.env

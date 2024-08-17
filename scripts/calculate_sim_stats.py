@@ -17,10 +17,59 @@ def process_command_line():
     args = parser.parse_args()
     return(args)
 
-def get_modified_KGE(obs,sim): 
-    '''Modified KGE reference: Kling, Harald, Martin Fuchs, and Maria Paulin. \
+def get_KGE(obs,sim, transfo = 1): 
+    obs = np.array(obs)
+    sim = np.array(sim)
+
+    isNotNA = np.invert(np.logical_or(np.isnan(obs), np.isnan(sim)))
+
+    obs = obs[isNotNA]
+    sim = sim[isNotNA]
+    
+    if transfo < 0:
+        epsilon =  np.mean(obs)/100
+    else:
+        epsilon = 0
+
+    obs    = (epsilon + obs) ** transfo
+    sim    = (epsilon + sim) ** transfo
+
+    sd_sim = np.std(sim, ddof=1)
+    sd_obs = np.std(obs, ddof=1)
+    
+    m_sim  = np.mean(sim)
+    m_obs  = np.mean(obs)
+    
+    r      = (np.corrcoef(sim,obs))[0,1]
+    var    = float(sd_sim)/float(sd_obs)
+    bias   = float(m_sim)/float(m_obs)
+    
+    kge    = 1.0-np.sqrt((r-1)**2 +(var-1)**2 + (bias-1)**2)
+
+    return kge
+
+
+def get_KGEp(obs,sim, transfo = 1): 
+    ''' KGE' reference: Kling, Harald, Martin Fuchs, and Maria Paulin. \
     "Runoff conditions in the upper Danube basin under an ensemble of climate change scenarios." \
     Journal of hydrology 424 (2012): 264-277.'''
+
+    obs = np.array(obs)
+    sim = np.array(sim)
+
+    isNotNA = np.invert(np.logical_or(np.isnan(obs), np.isnan(sim)))
+
+    obs = obs[isNotNA]
+    sim = sim[isNotNA]
+
+    if transfo < 0:
+        epsilon =  np.mean(obs)/100
+    else:
+        epsilon = 0
+
+    obs    = (epsilon + obs) ** transfo
+    sim    = (epsilon + sim) ** transfo
+
     sd_sim = np.std(sim, ddof=1)
     sd_obs = np.std(obs, ddof=1)
     
@@ -31,8 +80,79 @@ def get_modified_KGE(obs,sim):
     relvar = (float(sd_sim)/float(m_sim))/(float(sd_obs)/float(m_obs))
     bias   = float(m_sim)/float(m_obs)
     
-    kge    = 1.0-np.sqrt((r-1)**2 +(relvar-1)**2 + (bias-1)**2)
-    return kge
+    kgep    = 1.0-np.sqrt((r-1)**2 +(relvar-1)**2 + (bias-1)**2)
+
+    return kgep
+
+
+def get_NSE(obs,sim, transfo = 1): 
+
+    obs = np.array(obs)
+    sim = np.array(sim)
+
+    isNotNA = np.invert(np.logical_or(np.isnan(obs), np.isnan(sim)))
+
+    obs = obs[isNotNA]
+    sim = sim[isNotNA]
+
+    if transfo < 0:
+        epsilon =  np.mean(obs)/100
+    else:
+        epsilon = 0
+
+    obs    = (epsilon + obs) ** transfo
+    sim    = (epsilon + sim) ** transfo
+
+    nse    = 1-(np.sum(np.subtract(obs,sim)**2)/np.sum(np.subtract(obs, np.mean(sim))**2))
+
+    return nse
+
+def get_MAE(obs,sim, transfo = 1): 
+
+    obs = np.array(obs)
+    sim = np.array(sim)
+
+    isNotNA = np.invert(np.logical_or(np.isnan(obs), np.isnan(sim)))
+
+    obs = obs[isNotNA]
+    sim = sim[isNotNA]
+
+    if transfo < 0:
+        epsilon =  np.mean(obs)/100
+    else:
+        epsilon = 0
+
+    obs    = (epsilon + obs) ** transfo
+    sim    = (epsilon + sim) ** transfo
+
+    mae    = np.mean(np.abs(np.subtract(obs,sim)))
+
+    return mae
+
+def get_RMSE(obs,sim, transfo = 1): 
+
+    obs = np.array(obs)
+    sim = np.array(sim)
+
+    isNotNA = np.invert(np.logical_or(np.isnan(obs), np.isnan(sim)))
+
+    obs = obs[isNotNA]
+    sim = sim[isNotNA]
+
+    if transfo < 0:
+        epsilon =  np.mean(obs)/100
+    else:
+        epsilon = 0
+
+    obs    = (epsilon + obs) ** transfo
+    sim    = (epsilon + sim) ** transfo
+
+    rmse   = np.sqrt(np.mean(np.square(np.subtract(obs,sim))))
+
+    return rmse
+
+
+
 
 def read_from_control(control_file, setting):
     ''' Function to extract a given setting from the control_file.'''    
@@ -139,10 +259,28 @@ if __name__ == '__main__':
     df_merge    = pd.concat([df_obs_eval, df_sim_eval], axis=1)
     df_merge    = df_merge.dropna()
 
+    # --- Read objective function
+    
+    obj_fun = read_from_control(control_file, 'objective_function')    
+    # future improvement: q_trans = read_from_control(control_file, 'streamflow_transformation')
+    q_trans = 1
     # --- Calculate diagnostics --- 
-    kge = get_modified_KGE(obs=df_merge['obs'].values, sim=df_merge['sim'].values)
+    
+    if obj_fun == 'KGE':
+        score = get_KGE(obs=df_merge['obs'].values, sim=df_merge['sim'].values, transfo = q_trans)
+    elif obj_fun == 'KGEp':
+        score = get_KGEp(obs=df_merge['obs'].values, sim=df_merge['sim'].values, transfo = q_trans)
+    elif obj_fun == 'NSE':
+        score = get_NSE(obs=df_merge['obs'].values, sim=df_merge['sim'].values, transfo = q_trans)
+    elif obj_fun == 'MAE':
+        score = get_MAE(obs=df_merge['obs'].values, sim=df_merge['sim'].values, transfo = q_trans)
+    elif obj_fun == 'RMSE':
+        score = get_RMSE(obs=df_merge['obs'].values, sim=df_merge['sim'].values, transfo = q_trans)
+    else:
+        print('Objective function not found')
+        sys.exit()
     
     # #### 3. Save 
     f = open(stat_output, 'w+')
-    f.write('%.6f' %kge + '\t#KGE\n')
+    f.write('%.6f' %score + '\t#'+obj_fun+'\n')
     f.close()

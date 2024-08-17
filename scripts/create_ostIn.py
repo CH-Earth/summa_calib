@@ -68,7 +68,12 @@ if __name__ == '__main__':
     multp_bounds_arr = np.loadtxt(multp_bounds, dtype='str', delimiter=',') # MultiplierName,InitialValue,LowerLimit,UpperLimit.
     multp_num        = len(multp_bounds_arr)
     
-    # #### 2. Write ostIn.txt based on ostIn.tpl   
+    # #### 2. Remove OstQuit.txt if exists (file to aboard Ostrich run) 
+    ostquit_file = os.path.join(calib_path, 'OstQuit.txt')
+    if os.path.exists(ostquit_file):
+        os.remove(ostquit_file)
+    
+    # #### 3. Write ostIn.txt based on ostIn.tpl   
     # Identify ostIn template and txt file.
     ostIn_src = os.path.join(calib_path, read_from_control(control_file, 'ostIn_tpl'))
     ostIn_dst = os.path.join(calib_path, 'ostIn.txt')
